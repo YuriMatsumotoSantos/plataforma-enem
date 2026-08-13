@@ -41,7 +41,11 @@ jobs:
 
       - run: npm ci
       - run: npm run lint
-      - run: npm run typecheck
+      # `next build` generates .next/types (used by app/layout.tsx's
+      # auto-typed LayoutProps), so it must run before `tsc --noEmit` on a
+      # fresh checkout — otherwise typecheck fails with "Cannot find name
+      # 'LayoutProps'" even though the code is correct.
       - run: npm run build
+      - run: npm run typecheck
       - run: npx drizzle-kit migrate
       - run: npm run test
