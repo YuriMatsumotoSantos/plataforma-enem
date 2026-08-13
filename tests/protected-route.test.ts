@@ -10,7 +10,7 @@ describe("GET /api/me", () => {
   });
 
   it("retorna 200 com os dados do usuário quando a sessão é válida", async () => {
-    const email = `aluno-${Date.now()}@example.com`;
+    const email = `aluno-${crypto.randomUUID()}@example.com`;
     await auth.api.signUpEmail({
       body: { email, password: "senha-segura-123", name: "Aluno Teste" },
     });
@@ -19,6 +19,8 @@ describe("GET /api/me", () => {
       asResponse: true,
     });
     const setCookie = signIn.headers.get("set-cookie") ?? "";
+    expect(setCookie).toContain("HttpOnly");
+    expect(setCookie).toContain("SameSite=Lax");
 
     const request = new Request("http://localhost:3000/api/me", {
       headers: { cookie: setCookie },
