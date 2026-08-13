@@ -5,7 +5,7 @@ describe("autenticação por e-mail e senha", () => {
   it("permite cadastro com e-mail e senha válidos", async () => {
     const result = await auth.api.signUpEmail({
       body: {
-        email: `aluno-${Date.now()}@example.com`,
+        email: `aluno-${crypto.randomUUID()}@example.com`,
         password: "senha-segura-123",
         name: "Aluno Teste",
       },
@@ -15,7 +15,7 @@ describe("autenticação por e-mail e senha", () => {
   });
 
   it("permite login com credenciais corretas e recusa senha errada", async () => {
-    const email = `aluno-${Date.now()}@example.com`;
+    const email = `aluno-${crypto.randomUUID()}@example.com`;
     await auth.api.signUpEmail({
       body: { email, password: "senha-segura-123", name: "Aluno Teste" },
     });

@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Plataforma ENEM
 
-## Getting Started
+Base do app Next.js (autenticação, banco Postgres, headers de segurança e CI) sobre a qual os demais subsistemas serão construídos.
 
-First, run the development server:
+## Pré-requisitos
+
+- Node.js 20+
+- Docker (para o Postgres local)
+
+## Configuração
 
 ```bash
+cp .env.example .env.local   # ajuste os valores se necessário
+docker compose up -d         # sobe o Postgres local
+npm install
+npx drizzle-kit migrate      # ou: npm run db:migrate
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+O app fica disponível em `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+> O Postgres local do Docker Compose expõe a porta **5433** no host (não 5432),
+> para não colidir com uma instalação nativa do Postgres. A connection string
+> em `.env.example` já reflete isso.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Testes
 
-## Learn More
+```bash
+npm test
+```
 
-To learn more about Next.js, take a look at the following resources:
+Os testes de integração (`auth`, `protected-route`, `db`) rodam contra o Postgres
+do Docker Compose — confirme que ele está no ar antes de rodar `npm test`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts úteis
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `npm run dev` — servidor de desenvolvimento
+- `npm run build` — build de produção
+- `npm run lint` / `npm run typecheck` — checagens estáticas
+- `npm run db:generate` / `npm run db:migrate` — gera/aplica migrações do Drizzle

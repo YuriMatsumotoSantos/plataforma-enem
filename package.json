@@ -1,5 +1,5 @@
 {
-  "name": "fundacao",
+  "name": "plataforma-enem",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
     "better-auth": "^1.6.27",
