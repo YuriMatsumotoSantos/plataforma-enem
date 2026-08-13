@@ -6,6 +6,10 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: plataforma_enem
+    # Host port 5433 (not the default 5432): avoids colliding with a native
+    # Postgres install/service some dev machines already run on 5432. If
+    # 5433 is also taken on your machine, change this and DATABASE_URL in
+    # .env.local together — the container's internal port stays 5432.
     ports:
       - "5433:5432"
     volumes:
