@@ -14,6 +14,32 @@ describe("middleware", () => {
       headers: { cookie: "better-auth.session_token=fake-token" },
     });
     const response = middleware(request);
-    expect(response.status).not.toBe(401);
+    expect(response.status).toBe(200);
+  });
+
+  it("deixa /api/health passar sem cookie de sessão", () => {
+    const request = new NextRequest("http://localhost:3000/api/health");
+    const response = middleware(request);
+    expect(response.status).toBe(200);
+  });
+
+  it("deixa /api/auth/* passar sem cookie de sessão", () => {
+    const request = new NextRequest(
+      "http://localhost:3000/api/auth/sign-in/email"
+    );
+    const response = middleware(request);
+    expect(response.status).toBe(200);
+  });
+
+  it("não trata /api/healthcheck ou /api/authenticate como públicas (exclusão é por caminho exato, não prefixo)", () => {
+    const healthcheck = middleware(
+      new NextRequest("http://localhost:3000/api/healthcheck")
+    );
+    expect(healthcheck.status).toBe(401);
+
+    const authenticate = middleware(
+      new NextRequest("http://localhost:3000/api/authenticate")
+    );
+    expect(authenticate.status).toBe(401);
   });
 });
