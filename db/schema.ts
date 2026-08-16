@@ -167,3 +167,6 @@ export const questionsRelations = relations(questions, ({ one }) => ({
     references: [topics.id],
   }),
 }));
+
+export type Topic = typeof topics.$inferSelect;
+export type Question = typeof questions.$inferSelect;
