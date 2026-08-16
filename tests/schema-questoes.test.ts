@@ -3,6 +3,13 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { user, topics, questions } from "@/db/schema";
 
+// Anos fora da faixa real do ENEM, derivados de Date.now() para não colidir
+// com a restrição de unicidade (year, examDay, questionNumber) entre
+// execuções repetidas da suíte contra o mesmo Postgres local.
+function randomTestYear(): number {
+  return 90000 + (Date.now() % 9000);
+}
+
 describe("schema de questões", () => {
   it("cria um topic e uma question referenciando ele", async () => {
     const [topic] = await db
@@ -15,11 +22,12 @@ describe("schema de questões", () => {
       })
       .returning();
 
+    const testYear = randomTestYear();
     const [question] = await db
       .insert(questions)
       .values({
         id: crypto.randomUUID(),
-        year: 2025,
+        year: testYear,
         examDay: 2,
         questionNumber: 91,
         area: "natureza",
@@ -52,7 +60,7 @@ describe("schema de questões", () => {
     });
 
     const base = {
-      year: 2099,
+      year: randomTestYear(),
       examDay: 1 as const,
       questionNumber: 1,
       area: "matematica" as const,
