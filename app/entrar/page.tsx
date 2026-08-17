@@ -24,20 +24,24 @@ export default function EntrarPage() {
     setError(null);
     setLoading(true);
 
-    const { data, error: signInError } = await authClient.signIn.email({
-      email,
-      password,
-    });
+    try {
+      const { data, error: signInError } = await authClient.signIn.email({
+        email,
+        password,
+      });
 
-    setLoading(false);
+      if (signInError) {
+        setError(signInError.message ?? "Não foi possível entrar.");
+        return;
+      }
 
-    if (signInError) {
-      setError(signInError.message ?? "Não foi possível entrar.");
-      return;
+      const role = (data?.user as { role?: string } | undefined)?.role;
+      redirectByRole(role);
+    } catch {
+      setError("Não foi possível conectar. Verifique sua internet e tente novamente.");
+    } finally {
+      setLoading(false);
     }
-
-    const role = (data?.user as { role?: string } | undefined)?.role;
-    redirectByRole(role);
   }
 
   async function handleSignUp(event: FormEvent) {
@@ -45,21 +49,25 @@ export default function EntrarPage() {
     setError(null);
     setLoading(true);
 
-    const { data, error: signUpError } = await authClient.signUp.email({
-      name,
-      email,
-      password,
-    });
+    try {
+      const { data, error: signUpError } = await authClient.signUp.email({
+        name,
+        email,
+        password,
+      });
 
-    setLoading(false);
+      if (signUpError) {
+        setError(signUpError.message ?? "Não foi possível criar a conta.");
+        return;
+      }
 
-    if (signUpError) {
-      setError(signUpError.message ?? "Não foi possível criar a conta.");
-      return;
+      const role = (data?.user as { role?: string } | undefined)?.role;
+      redirectByRole(role);
+    } catch {
+      setError("Não foi possível conectar. Verifique sua internet e tente novamente.");
+    } finally {
+      setLoading(false);
     }
-
-    const role = (data?.user as { role?: string } | undefined)?.role;
-    redirectByRole(role);
   }
 
   return (

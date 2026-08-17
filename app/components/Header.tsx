@@ -9,9 +9,13 @@ export function Header() {
   const { data, isPending } = authClient.useSession();
 
   async function handleSignOut() {
-    await authClient.signOut();
-    router.push("/");
-    router.refresh();
+    try {
+      await authClient.signOut();
+      router.push("/");
+      router.refresh();
+    } catch (error) {
+      console.error("Erro ao sair:", error);
+    }
   }
 
   return (
