@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { Button } from "@/components/ui/button";
 
 export function Header() {
   const router = useRouter();
@@ -19,7 +20,7 @@ export function Header() {
   }
 
   return (
-    <header className="flex items-center justify-between border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
+    <header className="flex items-center justify-between border-b px-4 py-3">
       <Link href="/" className="font-semibold">
         Plataforma ENEM
       </Link>
@@ -27,18 +28,12 @@ export function Header() {
       {isPending ? null : data?.user ? (
         <div className="flex items-center gap-3 text-sm">
           <span>{data.user.name}</span>
-          <button
-            type="button"
-            onClick={handleSignOut}
-            className="rounded border border-zinc-300 px-3 py-1 dark:border-zinc-700"
-          >
+          <Button type="button" variant="outline" size="sm" onClick={handleSignOut}>
             Sair
-          </button>
+          </Button>
         </div>
       ) : (
-        <Link href="/entrar" className="text-sm underline">
-          Entrar
-        </Link>
+        <Button render={<Link href="/entrar">Entrar</Link>} variant="link" />
       )}
     </header>
   );
