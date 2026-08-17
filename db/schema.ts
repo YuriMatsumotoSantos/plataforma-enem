@@ -1,5 +1,17 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, boolean, index } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  timestamp,
+  boolean,
+  index,
+  integer,
+  jsonb,
+  pgEnum,
+  unique,
+} from "drizzle-orm/pg-core";
+
+export const userRole = pgEnum("user_role", ["aluno", "admin"]);
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -7,6 +19,7 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
+  role: userRole("role").default("aluno").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -91,3 +104,69 @@ export const accountRelations = relations(account, ({ one }) => ({
     references: [user.id],
   }),
 }));
+
+export const examArea = pgEnum("exam_area", [
+  "linguagens",
+  "humanas",
+  "natureza",
+  "matematica",
+]);
+
+export const questionStatus = pgEnum("question_status", [
+  "pendente",
+  "aprovada",
+  "rejeitada",
+]);
+
+export const topics = pgTable("topics", {
+  id: text("id").primaryKey(),
+  area: examArea("area").notNull(),
+  subject: text("subject").notNull(),
+  name: text("name").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type Alternative = { letter: string; text: string };
+
+export const questions = pgTable(
+  "questions",
+  {
+    id: text("id").primaryKey(),
+    year: integer("year").notNull(),
+    examDay: integer("exam_day").notNull(),
+    questionNumber: integer("question_number").notNull(),
+    area: examArea("area").notNull(),
+    statement: text("statement").notNull(),
+    alternatives: jsonb("alternatives").$type<Alternative[]>().notNull(),
+    correctAnswer: text("correct_answer").notNull(),
+    imageUrl: text("image_url"),
+    topicId: text("topic_id")
+      .notNull()
+      .references(() => topics.id),
+    status: questionStatus("status").default("pendente").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    unique("questions_year_day_number_unique").on(
+      table.year,
+      table.examDay,
+      table.questionNumber
+    ),
+    index("questions_topic_idx").on(table.topicId),
+    index("questions_status_idx").on(table.status),
+  ]
+);
+
+export const questionsRelations = relations(questions, ({ one }) => ({
+  topic: one(topics, {
+    fields: [questions.topicId],
+    references: [topics.id],
+  }),
+}));
+
+export type Topic = typeof topics.$inferSelect;
+export type Question = typeof questions.$inferSelect;

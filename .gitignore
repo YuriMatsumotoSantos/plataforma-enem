@@ -42,3 +42,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ingest downloads (large PDFs, not committed)
+scripts/ingest/downloads/
