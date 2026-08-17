@@ -93,6 +93,9 @@ async function main() {
   await processDay(1);
   await processDay(2);
   console.log("Ingestão concluída. Revise em /admin/revisao.");
+  // O cliente postgres-js não encerra os sockets sozinho no fim do script —
+  // sem isso, o processo fica pendurado indefinidamente após "concluído".
+  process.exit(0);
 }
 
 main().catch((error) => {
