@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { gemini, GEMINI_MODEL } from "@/lib/gemini";
+import { getGeminiClient, GEMINI_MODEL } from "@/lib/gemini";
 import type { ExtractedQuestion, GabaritoEntry } from "./types";
 
 const RESPONSE_SCHEMA = {
@@ -29,7 +29,7 @@ export async function extractGabaritoFromPdf(
   const fileBuffer = await readFile(pdfPath);
   const base64Data = fileBuffer.toString("base64");
 
-  const response = await gemini.models.generateContent({
+  const response = await getGeminiClient().models.generateContent({
     model: GEMINI_MODEL,
     contents: [
       {
