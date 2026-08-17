@@ -183,10 +183,12 @@ export default function EntrarPage() {
 }
 ```
 
-- [ ] **Step 2: Rodar lint e typecheck**
+- [ ] **Step 2: Rodar lint, build e typecheck**
 
-Run: `npm run lint && npx tsc --noEmit`
+Run: `npm run lint && npx next build && npx tsc --noEmit`
 Expected: sem erros
+
+**Atenção:** rode nessa ordem exata (build antes de typecheck). `app/layout.tsx` usa `LayoutProps<"/">`, um tipo gerado pelo Next.js 15 dentro de `.next/types/` durante o `next build` — rodar `tsc --noEmit` antes do build produz um falso erro "Cannot find name 'LayoutProps'". Esse é o motivo do CI deste projeto rodar build antes de typecheck. Não "corrija" esse tipo se ele aparecer como erro — rode o build primeiro.
 
 - [ ] **Step 3: Verificar manualmente**
 
@@ -310,10 +312,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
 }
 ```
 
-- [ ] **Step 3: Rodar lint, typecheck e build**
+- [ ] **Step 3: Rodar lint, build e typecheck**
 
-Run: `npm run lint && npx tsc --noEmit && npx next build`
+Run: `npm run lint && npx next build && npx tsc --noEmit`
 Expected: sem erros; `next build` deve listar `/entrar` entre as rotas geradas
+
+**Atenção:** rode nessa ordem exata (build antes de typecheck) — ver nota da Task 1, Step 2, sobre `LayoutProps<"/">`.
 
 - [ ] **Step 4: Verificar manualmente**
 
