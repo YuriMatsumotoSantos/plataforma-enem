@@ -67,6 +67,21 @@ export async function PATCH(
     );
   }
 
+  // Validate statement and correctAnswer must be strings if present
+  if ("statement" in bodyRecord && typeof bodyRecord.statement !== "string") {
+    return Response.json(
+      { error: "Campo inválido: statement e correctAnswer devem ser texto" },
+      { status: 400 }
+    );
+  }
+
+  if ("correctAnswer" in bodyRecord && typeof bodyRecord.correctAnswer !== "string") {
+    return Response.json(
+      { error: "Campo inválido: statement e correctAnswer devem ser texto" },
+      { status: 400 }
+    );
+  }
+
   if ("topicId" in bodyRecord) {
     const topicId = bodyRecord.topicId;
     if (typeof topicId !== "string") {

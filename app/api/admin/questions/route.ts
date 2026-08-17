@@ -4,9 +4,14 @@ import { db } from "@/lib/db";
 import { questions, topics } from "@/db/schema";
 
 const VALID_STATUSES = ["pendente", "aprovada", "rejeitada"] as const;
+const VALID_AREAS = ["linguagens", "humanas", "natureza", "matematica"] as const;
 
 function isValidStatus(value: string): value is (typeof VALID_STATUSES)[number] {
   return VALID_STATUSES.some((s) => s === value);
+}
+
+function isValidArea(value: string): value is (typeof VALID_AREAS)[number] {
+  return VALID_AREAS.some((a) => a === value);
 }
 
 export async function GET(request: Request) {
@@ -21,6 +26,10 @@ export async function GET(request: Request) {
 
   if (!isValidStatus(status)) {
     return Response.json({ error: "Status inválido" }, { status: 400 });
+  }
+
+  if (area && !isValidArea(area)) {
+    return Response.json({ error: "Área inválida" }, { status: 400 });
   }
 
   const conditions = [eq(questions.status, status)];

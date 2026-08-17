@@ -74,6 +74,19 @@ describe("GET /api/admin/questions", () => {
     expect(found).toBeDefined();
     expect(found.topic.name).toBe("Óptica");
   });
+
+  it("retorna 400 para área inválida na query", async () => {
+    const cookie = await createAdminCookie();
+    const request = new Request(
+      "http://localhost:3000/api/admin/questions?area=xyz",
+      { headers: { cookie } }
+    );
+    const response = await GET(request);
+    expect(response.status).toBe(400);
+
+    const body = await response.json();
+    expect(body.error).toBe("Área inválida");
+  });
 });
 
 describe("PATCH /api/admin/questions/:id", () => {
@@ -252,5 +265,101 @@ describe("PATCH /api/admin/questions/:id", () => {
 
     const body = await response.json();
     expect(body.error).toBe("Alternativas devem ter exatamente 5 itens (A-E)");
+  });
+
+  it("retorna 400 para statement null no PATCH", async () => {
+    const [topic] = await db
+      .insert(topics)
+      .values({ id: crypto.randomUUID(), area: "humanas", subject: "História", name: "Brasil Colonial" })
+      .returning();
+
+    const testYear = randomTestYear();
+    const testDay = Math.floor(Math.random() * 2) + 1;
+    const testNumber = Math.floor(Math.random() * 100) + 1;
+
+    const [question] = await db
+      .insert(questions)
+      .values({
+        id: crypto.randomUUID(),
+        year: testYear,
+        examDay: testDay,
+        questionNumber: testNumber,
+        area: "humanas",
+        statement: "teste",
+        alternatives: [
+          { letter: "A", text: "1" },
+          { letter: "B", text: "2" },
+          { letter: "C", text: "3" },
+          { letter: "D", text: "4" },
+          { letter: "E", text: "5" },
+        ],
+        correctAnswer: "A",
+        topicId: topic.id,
+        status: "pendente",
+      })
+      .returning();
+
+    const cookie = await createAdminCookie();
+    const request = new Request(
+      `http://localhost:3000/api/admin/questions/${question.id}`,
+      {
+        method: "PATCH",
+        headers: { cookie, "Content-Type": "application/json" },
+        body: JSON.stringify({ statement: null }),
+      }
+    );
+    const response = await PATCH(request, { params: Promise.resolve({ id: question.id }) });
+    expect(response.status).toBe(400);
+
+    const body = await response.json();
+    expect(body.error).toBe("Campo inválido: statement e correctAnswer devem ser texto");
+  });
+
+  it("retorna 400 para correctAnswer null no PATCH", async () => {
+    const [topic] = await db
+      .insert(topics)
+      .values({ id: crypto.randomUUID(), area: "natureza", subject: "Biologia", name: "Genética" })
+      .returning();
+
+    const testYear = randomTestYear();
+    const testDay = Math.floor(Math.random() * 2) + 1;
+    const testNumber = Math.floor(Math.random() * 100) + 1;
+
+    const [question] = await db
+      .insert(questions)
+      .values({
+        id: crypto.randomUUID(),
+        year: testYear,
+        examDay: testDay,
+        questionNumber: testNumber,
+        area: "natureza",
+        statement: "teste",
+        alternatives: [
+          { letter: "A", text: "1" },
+          { letter: "B", text: "2" },
+          { letter: "C", text: "3" },
+          { letter: "D", text: "4" },
+          { letter: "E", text: "5" },
+        ],
+        correctAnswer: "A",
+        topicId: topic.id,
+        status: "pendente",
+      })
+      .returning();
+
+    const cookie = await createAdminCookie();
+    const request = new Request(
+      `http://localhost:3000/api/admin/questions/${question.id}`,
+      {
+        method: "PATCH",
+        headers: { cookie, "Content-Type": "application/json" },
+        body: JSON.stringify({ correctAnswer: null }),
+      }
+    );
+    const response = await PATCH(request, { params: Promise.resolve({ id: question.id }) });
+    expect(response.status).toBe(400);
+
+    const body = await response.json();
+    expect(body.error).toBe("Campo inválido: statement e correctAnswer devem ser texto");
   });
 });
