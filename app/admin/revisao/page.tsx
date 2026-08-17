@@ -28,6 +28,9 @@ export default function RevisaoPage() {
         if (response.status === 401) {
           throw new Error("Não autorizado — faça login com uma conta admin.");
         }
+        if (!response.ok) {
+          throw new Error("Erro ao carregar questões. Tente novamente.");
+        }
         return response.json();
       })
       .then((data) => setQuestions(data.questions))
@@ -42,6 +45,8 @@ export default function RevisaoPage() {
     });
     if (response.ok) {
       setQuestions((prev) => (prev ? prev.filter((q) => q.id !== id) : prev));
+    } else {
+      setError("Erro ao processar ação. Tente novamente.");
     }
   }
 
