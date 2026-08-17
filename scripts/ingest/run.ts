@@ -1,11 +1,11 @@
 import path from "node:path";
 import { db } from "@/lib/db";
 import { questions } from "@/db/schema";
-import { INGEST_YEAR, PDF_URLS, DOWNLOAD_DIR } from "./config";
+import { INGEST_YEAR, PDF_URLS, DOWNLOAD_DIR, EXPECTED_QUESTIONS_PER_DAY } from "./config";
 import { downloadPdf } from "./download";
 import { extractQuestionsFromPdf } from "./extract-questions";
 import { extractGabaritoFromPdf, mergeGabarito } from "./extract-gabarito";
-import { questionAlreadyExists } from "./idempotency";
+import { questionAlreadyExists, countExistingQuestions } from "./idempotency";
 import { renderPageImage, uploadQuestionImage } from "./images";
 import { findOrCreateTopic } from "./topics";
 
@@ -26,6 +26,15 @@ function hasValidAlternatives(alternatives: { letter: string; text: string }[]):
 }
 
 async function processDay(examDay: 1 | 2) {
+  // Checagem de otimização: se o dia já está completo, pula a extração
+  const existingCount = await countExistingQuestions(INGEST_YEAR, examDay);
+  if (existingCount >= EXPECTED_QUESTIONS_PER_DAY) {
+    console.log(
+      `[dia ${examDay}] já completo (${existingCount}/${EXPECTED_QUESTIONS_PER_DAY}), pulando extração`
+    );
+    return;
+  }
+
   const examUrl = examDay === 1 ? PDF_URLS.day1Exam : PDF_URLS.day2Exam;
   const gabaritoUrl = examDay === 1 ? PDF_URLS.day1Gabarito : PDF_URLS.day2Gabarito;
 
