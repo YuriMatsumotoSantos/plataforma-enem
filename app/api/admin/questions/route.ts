@@ -1,7 +1,13 @@
 import { and, eq } from "drizzle-orm";
 import { requireAdmin } from "@/lib/admin";
 import { db } from "@/lib/db";
-import { questions, topics, type Alternative } from "@/db/schema";
+import { questions, topics } from "@/db/schema";
+
+const VALID_STATUSES = ["pendente", "aprovada", "rejeitada"] as const;
+
+function isValidStatus(value: string): value is (typeof VALID_STATUSES)[number] {
+  return VALID_STATUSES.some((s) => s === value);
+}
 
 export async function GET(request: Request) {
   const session = await requireAdmin(request);
@@ -13,7 +19,11 @@ export async function GET(request: Request) {
   const status = url.searchParams.get("status") ?? "pendente";
   const area = url.searchParams.get("area");
 
-  const conditions = [eq(questions.status, status as "pendente" | "aprovada" | "rejeitada")];
+  if (!isValidStatus(status)) {
+    return Response.json({ error: "Status inválido" }, { status: 400 });
+  }
+
+  const conditions = [eq(questions.status, status)];
   if (area) {
     conditions.push(eq(questions.area, area as "linguagens" | "humanas" | "natureza" | "matematica"));
   }
