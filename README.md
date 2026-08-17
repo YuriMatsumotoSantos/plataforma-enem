@@ -38,3 +38,18 @@ do Docker Compose — confirme que ele está no ar antes de rodar `npm test`.
 - `npm run build` — build de produção
 - `npm run lint` / `npm run typecheck` — checagens estáticas
 - `npm run db:generate` / `npm run db:migrate` — gera/aplica migrações do Drizzle
+
+## Curadoria de questões (banco de questões do ENEM)
+
+Pipeline de ingestão local (não roda no site em produção — só no seu computador):
+
+1. Configure as variáveis no `.env.local`: `GEMINI_API_KEY` (aistudio.google.com),
+   `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` (painel do Supabase → Project
+   Settings → API)
+2. Confirme que o bucket `question-images` existe no Supabase Storage (público)
+3. Rode `npm run ingest` — baixa as provas de 2025, extrai e classifica as
+   questões via Gemini, e grava tudo com status `pendente` (leva uns 15-20
+   minutos)
+4. Acesse `/admin/revisao` logado com uma conta `admin` (marque
+   `role = 'admin'` na tabela `user` do banco) para aprovar, corrigir ou
+   rejeitar cada questão extraída
