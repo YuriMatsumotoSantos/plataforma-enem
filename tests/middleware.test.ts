@@ -42,4 +42,19 @@ describe("middleware", () => {
     );
     expect(authenticate.status).toBe(401);
   });
+
+  it("redireciona /admin/revisao para / quando não há cookie de sessão", () => {
+    const request = new NextRequest("http://localhost:3000/admin/revisao");
+    const response = middleware(request);
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe("http://localhost:3000/");
+  });
+
+  it("deixa /admin/revisao passar quando o cookie de sessão está presente", () => {
+    const request = new NextRequest("http://localhost:3000/admin/revisao", {
+      headers: { cookie: "better-auth.session_token=fake-token" },
+    });
+    const response = middleware(request);
+    expect(response.status).toBe(200);
+  });
 });
