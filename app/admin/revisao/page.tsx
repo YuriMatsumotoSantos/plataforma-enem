@@ -71,17 +71,26 @@ function RevisaoContent() {
   }, [page]);
 
   async function handleAction(id: string, status: "aprovada" | "rejeitada") {
-    const response = await fetch(`/api/admin/questions/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
-    if (response.ok) {
-      setQuestions((prev) => (prev ? prev.filter((q) => q.id !== id) : prev));
-      setTotal((prev) => prev - 1);
+    try {
+      const response = await fetch(`/api/admin/questions/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!response.ok) {
+        setActionError("Erro ao processar ação. Tente novamente.");
+        return;
+      }
       setActionError(null);
-    } else {
-      setActionError("Erro ao processar ação. Tente novamente.");
+
+      const refreshResponse = await fetch(`/api/admin/questions?status=pendente&page=${page}`);
+      if (refreshResponse.ok) {
+        const data = await refreshResponse.json();
+        setQuestions(data.questions);
+        setTotal(data.total);
+      }
+    } catch {
+      setActionError("Não foi possível conectar. Verifique sua internet e tente novamente.");
     }
   }
 
