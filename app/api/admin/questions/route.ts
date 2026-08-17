@@ -69,6 +69,7 @@ export async function GET(request: Request) {
     .from(questions)
     .innerJoin(topics, eq(questions.topicId, topics.id))
     .where(and(...conditions))
+    .orderBy(questions.year, questions.examDay, questions.questionNumber)
     .limit(PAGE_SIZE)
     .offset((page - 1) * PAGE_SIZE);
 
