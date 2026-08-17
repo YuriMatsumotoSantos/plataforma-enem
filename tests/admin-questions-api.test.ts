@@ -1,10 +1,16 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect } from "vitest";
 import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { user, topics, questions } from "@/db/schema";
 import { GET } from "@/app/api/admin/questions/route";
 import { PATCH } from "@/app/api/admin/questions/[id]/route";
+
+// Anos fora da faixa real do ENEM, para não colidir com dados reais
+// (ex.: as 179 questões de 2025 já presentes no banco de dev local).
+function randomTestYear(): number {
+  return 90000 + (Date.now() % 9000);
+}
 
 async function createAdminCookie() {
   const email = `admin-${crypto.randomUUID()}@example.com`;
@@ -32,7 +38,7 @@ describe("GET /api/admin/questions", () => {
       .values({ id: crypto.randomUUID(), area: "natureza", subject: "Física", name: "Óptica" })
       .returning();
 
-    const testYear = 2000 + Math.floor(Math.random() * 100);
+    const testYear = randomTestYear();
     const testDay = Math.floor(Math.random() * 2) + 1;
     const testNumber = Math.floor(Math.random() * 100) + 1;
 
@@ -86,7 +92,7 @@ describe("PATCH /api/admin/questions/:id", () => {
       .values({ id: crypto.randomUUID(), area: "matematica", subject: "Matemática", name: "Geometria" })
       .returning();
 
-    const testYear = 2000 + Math.floor(Math.random() * 100);
+    const testYear = randomTestYear();
     const testDay = Math.floor(Math.random() * 2) + 1;
     const testNumber = Math.floor(Math.random() * 100) + 1;
 
@@ -151,7 +157,7 @@ describe("PATCH /api/admin/questions/:id", () => {
       .values({ id: crypto.randomUUID(), area: "natureza", subject: "Física", name: "Mecânica" })
       .returning();
 
-    const testYear = 2000 + Math.floor(Math.random() * 100);
+    const testYear = randomTestYear();
     const testDay = Math.floor(Math.random() * 2) + 1;
     const testNumber = Math.floor(Math.random() * 100) + 1;
 
@@ -191,5 +197,60 @@ describe("PATCH /api/admin/questions/:id", () => {
 
     const body = await response.json();
     expect(body.error).toBe("Status inválido");
+  });
+
+  it("retorna 400 quando alternatives não tem exatamente 5 itens (A-E)", async () => {
+    const [topic] = await db
+      .insert(topics)
+      .values({ id: crypto.randomUUID(), area: "linguagens", subject: "Português", name: "Interpretação" })
+      .returning();
+
+    const testYear = randomTestYear();
+    const testDay = Math.floor(Math.random() * 2) + 1;
+    const testNumber = Math.floor(Math.random() * 100) + 1;
+
+    const [question] = await db
+      .insert(questions)
+      .values({
+        id: crypto.randomUUID(),
+        year: testYear,
+        examDay: testDay,
+        questionNumber: testNumber,
+        area: "linguagens",
+        statement: "teste",
+        alternatives: [
+          { letter: "A", text: "1" },
+          { letter: "B", text: "2" },
+          { letter: "C", text: "3" },
+          { letter: "D", text: "4" },
+          { letter: "E", text: "5" },
+        ],
+        correctAnswer: "A",
+        topicId: topic.id,
+        status: "pendente",
+      })
+      .returning();
+
+    const cookie = await createAdminCookie();
+    const request = new Request(
+      `http://localhost:3000/api/admin/questions/${question.id}`,
+      {
+        method: "PATCH",
+        headers: { cookie, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          alternatives: [
+            { letter: "A", text: "1" },
+            { letter: "B", text: "2" },
+            { letter: "C", text: "3" },
+            { letter: "D", text: "4" },
+          ],
+        }),
+      }
+    );
+    const response = await PATCH(request, { params: Promise.resolve({ id: question.id }) });
+    expect(response.status).toBe(400);
+
+    const body = await response.json();
+    expect(body.error).toBe("Alternativas devem ter exatamente 5 itens (A-E)");
   });
 });
