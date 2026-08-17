@@ -21,6 +21,7 @@ type Question = {
 export default function RevisaoPage() {
   const [questions, setQuestions] = useState<Question[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/questions?status=pendente")
@@ -45,8 +46,9 @@ export default function RevisaoPage() {
     });
     if (response.ok) {
       setQuestions((prev) => (prev ? prev.filter((q) => q.id !== id) : prev));
+      setActionError(null);
     } else {
-      setError("Erro ao processar ação. Tente novamente.");
+      setActionError("Erro ao processar ação. Tente novamente.");
     }
   }
 
@@ -65,6 +67,7 @@ export default function RevisaoPage() {
   return (
     <main>
       <h1>Revisão de questões ({questions.length} pendentes)</h1>
+      {actionError && <p style={{ color: "red" }}>{actionError}</p>}
       {questions.map((question) => (
         <article key={question.id} style={{ border: "1px solid #ccc", padding: 16, marginBottom: 16 }}>
           <p>
