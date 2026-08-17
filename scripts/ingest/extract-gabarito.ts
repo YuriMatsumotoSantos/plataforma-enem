@@ -63,13 +63,18 @@ export function mergeGabarito(
     gabarito.map((entry) => [entry.questionNumber, entry.correctAnswer])
   );
 
-  return questions.map((question) => {
+  const merged: (ExtractedQuestion & { correctAnswer: string })[] = [];
+
+  for (const question of questions) {
     const correctAnswer = answerByNumber.get(question.questionNumber);
     if (!correctAnswer) {
-      throw new Error(
-        `Sem gabarito para a questão número ${question.questionNumber}`
+      console.warn(
+        `Sem gabarito para a questão número ${question.questionNumber} — pulando questão (o restante do dia continua sendo processado)`
       );
+      continue;
     }
-    return { ...question, correctAnswer };
-  });
+    merged.push({ ...question, correctAnswer });
+  }
+
+  return merged;
 }

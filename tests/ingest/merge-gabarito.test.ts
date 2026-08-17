@@ -28,9 +28,14 @@ describe("mergeGabarito", () => {
     expect(result[0].correctAnswer).toBe("C");
   });
 
-  it("lança erro quando falta gabarito para uma questão", () => {
-    expect(() => mergeGabarito([baseQuestion], [])).toThrow(
-      "Sem gabarito para a questão número 91"
+  it("pula a questão quando falta gabarito, sem abortar as demais", () => {
+    const otherQuestion: ExtractedQuestion = { ...baseQuestion, questionNumber: 92 };
+    const result = mergeGabarito(
+      [baseQuestion, otherQuestion],
+      [{ questionNumber: 92, correctAnswer: "B" }]
     );
+    expect(result).toHaveLength(1);
+    expect(result[0].questionNumber).toBe(92);
+    expect(result[0].correctAnswer).toBe("B");
   });
 });
