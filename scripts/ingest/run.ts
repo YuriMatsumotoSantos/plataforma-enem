@@ -10,9 +10,19 @@ import { renderPageImage, uploadQuestionImage } from "./images";
 import { findOrCreateTopic } from "./topics";
 
 const DELAY_BETWEEN_CALLS_MS = 4500; // ~13 chamadas/min, abaixo do limite de 15 RPM
+const VALID_LETTERS = ["A", "B", "C", "D", "E"];
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Restrição global do plano: alternativas sempre exatamente 5 (A-E).
+function hasValidAlternatives(alternatives: { letter: string; text: string }[]): boolean {
+  if (!Array.isArray(alternatives) || alternatives.length !== 5) {
+    return false;
+  }
+  const letters = new Set(alternatives.map((alt) => alt.letter));
+  return VALID_LETTERS.every((letter) => letters.has(letter)) && letters.size === 5;
 }
 
 async function processDay(examDay: 1 | 2) {
@@ -42,6 +52,15 @@ async function processDay(examDay: 1 | 2) {
   let skipped = 0;
 
   for (const question of withAnswers) {
+    if (!hasValidAlternatives(question.alternatives)) {
+      console.warn(
+        `[dia ${examDay}] questão ${question.questionNumber}: alternativas inválidas (esperado exatamente 5, letras A-E) — pulando questão`,
+        question.alternatives
+      );
+      skipped += 1;
+      continue;
+    }
+
     const alreadyExists = await questionAlreadyExists(
       INGEST_YEAR,
       examDay,
