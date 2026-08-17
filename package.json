@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "ingest": "tsx --env-file=.env.local scripts/ingest/run.ts"
   },
   "dependencies": {
     "@google/genai": "^2.17.1",
