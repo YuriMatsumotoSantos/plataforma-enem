@@ -32,7 +32,13 @@ describe("GET /api/admin/questions", () => {
     expect(response.status).toBe(401);
   });
 
-  it("retorna as questões pendentes para um admin", async () => {
+  it("retorna as questões de um status para um admin, com o topic", async () => {
+    // Usa status=rejeitada (não pendente) porque o banco de dev compartilhado
+    // já tem 200+ questões reais com status=pendente sem ORDER BY definido:
+    // com paginação, a questão recém-inserida não teria garantia de cair na
+    // primeira página. status=rejeitada está garantidamente livre de dados reais.
+    // Também filtra por area=natureza para não competir com o teste de
+    // paginação abaixo, que insere 25 linhas rejeitada/matematica a cada run.
     const [topic] = await db
       .insert(topics)
       .values({ id: crypto.randomUUID(), area: "natureza", subject: "Física", name: "Óptica" })
@@ -58,12 +64,12 @@ describe("GET /api/admin/questions", () => {
       ],
       correctAnswer: "A",
       topicId: topic.id,
-      status: "pendente",
+      status: "rejeitada",
     });
 
     const cookie = await createAdminCookie();
     const request = new Request(
-      "http://localhost:3000/api/admin/questions?status=pendente",
+      "http://localhost:3000/api/admin/questions?status=rejeitada&area=natureza",
       { headers: { cookie } }
     );
     const response = await GET(request);
@@ -86,6 +92,101 @@ describe("GET /api/admin/questions", () => {
 
     const body = await response.json();
     expect(body.error).toBe("Área inválida");
+  });
+
+  it("usa page=1 quando o parâmetro page é inválido ou ausente", async () => {
+    const cookie = await createAdminCookie();
+
+    const noPageRequest = new Request(
+      "http://localhost:3000/api/admin/questions?status=rejeitada",
+      { headers: { cookie } }
+    );
+    const noPageBody = await (await GET(noPageRequest)).json();
+    expect(noPageBody.page).toBe(1);
+    expect(noPageBody.pageSize).toBe(20);
+
+    const invalidPageRequest = new Request(
+      "http://localhost:3000/api/admin/questions?status=rejeitada&page=abc",
+      { headers: { cookie } }
+    );
+    const invalidPageBody = await (await GET(invalidPageRequest)).json();
+    expect(invalidPageBody.page).toBe(1);
+
+    const zeroPageRequest = new Request(
+      "http://localhost:3000/api/admin/questions?status=rejeitada&page=0",
+      { headers: { cookie } }
+    );
+    const zeroPageBody = await (await GET(zeroPageRequest)).json();
+    expect(zeroPageBody.page).toBe(1);
+  });
+
+  it("pagina os resultados, 20 por página, com total refletindo o total real", async () => {
+    const cookie = await createAdminCookie();
+
+    // Baseline dinâmico: não assume que status=rejeitada está vazio no banco
+    // compartilhado (outros testes do suite podem já ter inserido linhas ali).
+    const baselineRequest = new Request(
+      "http://localhost:3000/api/admin/questions?status=rejeitada",
+      { headers: { cookie } }
+    );
+    const baselineBody = await (await GET(baselineRequest)).json();
+    const baselineTotal: number = baselineBody.total;
+
+    const [topic] = await db
+      .insert(topics)
+      .values({ id: crypto.randomUUID(), area: "matematica", subject: "Matemática", name: "Álgebra" })
+      .returning();
+
+    const testYear = randomTestYear();
+    const baseNumber = Math.floor(Math.random() * 500) + 1;
+
+    for (let i = 0; i < 25; i++) {
+      await db.insert(questions).values({
+        id: crypto.randomUUID(),
+        year: testYear,
+        examDay: 1,
+        questionNumber: baseNumber + i,
+        area: "matematica",
+        statement: `questão paginação ${i}`,
+        alternatives: [
+          { letter: "A", text: "1" },
+          { letter: "B", text: "2" },
+          { letter: "C", text: "3" },
+          { letter: "D", text: "4" },
+          { letter: "E", text: "5" },
+        ],
+        correctAnswer: "A",
+        topicId: topic.id,
+        status: "rejeitada",
+      });
+    }
+
+    const expectedTotal = baselineTotal + 25;
+
+    const firstPageRequest = new Request(
+      "http://localhost:3000/api/admin/questions?status=rejeitada",
+      { headers: { cookie } }
+    );
+    const firstPage = await (await GET(firstPageRequest)).json();
+    expect(firstPage.total).toBe(expectedTotal);
+    expect(firstPage.page).toBe(1);
+    expect(firstPage.pageSize).toBe(20);
+    expect(firstPage.questions).toHaveLength(20);
+
+    const lastPageNumber = Math.ceil(expectedTotal / 20);
+    const lastPageRequest = new Request(
+      `http://localhost:3000/api/admin/questions?status=rejeitada&page=${lastPageNumber}`,
+      { headers: { cookie } }
+    );
+    const lastPage = await (await GET(lastPageRequest)).json();
+    const expectedLastPageCount = expectedTotal - (lastPageNumber - 1) * 20;
+    expect(lastPage.questions).toHaveLength(expectedLastPageCount);
+
+    if (lastPageNumber !== 1) {
+      const firstIds = new Set(firstPage.questions.map((q: { id: string }) => q.id));
+      const overlap = lastPage.questions.filter((q: { id: string }) => firstIds.has(q.id));
+      expect(overlap).toHaveLength(0);
+    }
   });
 });
 

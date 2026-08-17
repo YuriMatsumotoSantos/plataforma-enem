@@ -1,10 +1,11 @@
-import { and, eq } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 import { requireAdmin } from "@/lib/admin";
 import { db } from "@/lib/db";
 import { questions, topics } from "@/db/schema";
 
 const VALID_STATUSES = ["pendente", "aprovada", "rejeitada"] as const;
 const VALID_AREAS = ["linguagens", "humanas", "natureza", "matematica"] as const;
+const PAGE_SIZE = 20;
 
 function isValidStatus(value: string): value is (typeof VALID_STATUSES)[number] {
   return VALID_STATUSES.some((s) => s === value);
@@ -12,6 +13,14 @@ function isValidStatus(value: string): value is (typeof VALID_STATUSES)[number] 
 
 function isValidArea(value: string): value is (typeof VALID_AREAS)[number] {
   return VALID_AREAS.some((a) => a === value);
+}
+
+function parsePage(value: string | null): number {
+  if (!value || !/^\d+$/.test(value)) {
+    return 1;
+  }
+  const parsed = Number(value);
+  return parsed >= 1 ? parsed : 1;
 }
 
 export async function GET(request: Request) {
@@ -23,6 +32,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const status = url.searchParams.get("status") ?? "pendente";
   const area = url.searchParams.get("area");
+  const page = parsePage(url.searchParams.get("page"));
 
   if (!isValidStatus(status)) {
     return Response.json({ error: "Status inválido" }, { status: 400 });
@@ -36,6 +46,11 @@ export async function GET(request: Request) {
   if (area) {
     conditions.push(eq(questions.area, area as "linguagens" | "humanas" | "natureza" | "matematica"));
   }
+
+  const [{ value: total }] = await db
+    .select({ value: count() })
+    .from(questions)
+    .where(and(...conditions));
 
   const rows = await db
     .select({
@@ -53,7 +68,10 @@ export async function GET(request: Request) {
     })
     .from(questions)
     .innerJoin(topics, eq(questions.topicId, topics.id))
-    .where(and(...conditions));
+    .where(and(...conditions))
+    .orderBy(questions.year, questions.examDay, questions.questionNumber)
+    .limit(PAGE_SIZE)
+    .offset((page - 1) * PAGE_SIZE);
 
-  return Response.json({ questions: rows });
+  return Response.json({ questions: rows, total, page, pageSize: PAGE_SIZE });
 }

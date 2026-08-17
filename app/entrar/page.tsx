@@ -3,6 +3,10 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 type Mode = "login" | "cadastro";
 
@@ -71,71 +75,73 @@ export default function EntrarPage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-sm flex-1 flex-col justify-center gap-6 px-4 py-16">
-      <h1 className="text-2xl font-semibold">
-        {mode === "login" ? "Entrar" : "Criar conta"}
-      </h1>
+    <main className="flex flex-1 items-center justify-center px-4 py-16">
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle className="text-2xl">
+            {mode === "login" ? "Entrar" : "Criar conta"}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form
+            onSubmit={mode === "login" ? handleLogin : handleSignUp}
+            className="flex flex-col gap-4"
+          >
+            {mode === "cadastro" && (
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="name">Nome</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                />
+              </div>
+            )}
 
-      <form
-        onSubmit={mode === "login" ? handleLogin : handleSignUp}
-        className="flex flex-col gap-4"
-      >
-        {mode === "cadastro" && (
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium">Nome</span>
-            <input
-              type="text"
-              required
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              className="rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
-            />
-          </label>
-        )}
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="email">E-mail</Label>
+              <Input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </div>
 
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">E-mail</span>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            className="rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
-          />
-        </label>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="password">Senha</Label>
+              <Input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+            </div>
 
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">Senha</span>
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            className="rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
-          />
-        </label>
+            {error && <p className="text-sm text-destructive">{error}</p>}
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+            <Button type="submit" disabled={loading}>
+              {loading ? "Aguarde..." : mode === "login" ? "Entrar" : "Criar conta"}
+            </Button>
+          </form>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded bg-zinc-900 px-4 py-2 text-white disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900"
-        >
-          {loading ? "Aguarde..." : mode === "login" ? "Entrar" : "Criar conta"}
-        </button>
-      </form>
-
-      <button
-        type="button"
-        onClick={() => {
-          setMode(mode === "login" ? "cadastro" : "login");
-          setError(null);
-        }}
-        className="text-sm text-zinc-600 underline dark:text-zinc-400"
-      >
-        {mode === "login" ? "Criar conta" : "Já tenho conta — entrar"}
-      </button>
+          <Button
+            type="button"
+            variant="link"
+            className="mt-2 px-0"
+            onClick={() => {
+              setMode(mode === "login" ? "cadastro" : "login");
+              setError(null);
+            }}
+          >
+            {mode === "login" ? "Criar conta" : "Já tenho conta — entrar"}
+          </Button>
+        </CardContent>
+      </Card>
     </main>
   );
 }

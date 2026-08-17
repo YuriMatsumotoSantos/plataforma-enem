@@ -45,3 +45,6 @@ next-env.d.ts
 
 # ingest downloads (large PDFs, not committed)
 scripts/ingest/downloads/
+
+# local Claude Code tooling (skills, dev-server launch config) - not project code
+.claude/
