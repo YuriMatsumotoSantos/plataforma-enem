@@ -49,17 +49,17 @@ function isValidStatus(value: string | null): value is Status {
   return STATUSES.some((s) => s === value);
 }
 
-async function fetchStatusCounts(): Promise<Record<Status, number>> {
+async function fetchStatusCounts(): Promise<Record<Status, number | null>> {
   const results = await Promise.all(
     STATUSES.map((s) =>
       fetch(`/api/admin/questions?status=${s}&page=1`)
-        .then((response) => (response.ok ? response.json() : { total: 0 }))
-        .catch(() => ({ total: 0 }))
+        .then((response) => (response.ok ? response.json() : { total: null }))
+        .catch(() => ({ total: null }))
     )
   );
-  const next = {} as Record<Status, number>;
+  const next = {} as Record<Status, number | null>;
   STATUSES.forEach((s, index) => {
-    next[s] = results[index].total ?? 0;
+    next[s] = results[index].total ?? null;
   });
   return next;
 }
@@ -72,7 +72,7 @@ function RevisaoContent() {
 
   const [questions, setQuestions] = useState<Question[] | null>(null);
   const [total, setTotal] = useState(0);
-  const [counts, setCounts] = useState<Record<Status, number> | null>(null);
+  const [counts, setCounts] = useState<Record<Status, number | null> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
@@ -161,10 +161,15 @@ function RevisaoContent() {
               size="sm"
               variant={s === status ? "default" : "outline"}
               nativeButton={false}
-              render={<Link href={`/admin/revisao?status=${s}&page=1`} />}
+              render={
+                <Link
+                  href={`/admin/revisao?status=${s}&page=1`}
+                  aria-current={s === status ? "page" : undefined}
+                />
+              }
             >
               {STATUS_LABELS[s]}
-              {counts ? ` (${counts[s]})` : ""}
+              {counts && counts[s] != null ? ` (${counts[s]})` : ""}
             </Button>
           ))}
         </div>
