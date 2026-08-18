@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { requireUser } from "@/lib/session";
 import { db } from "@/lib/db";
 import { attempts, questions } from "@/db/schema";
@@ -30,12 +30,22 @@ export async function POST(request: Request) {
   }
 
   const [question] = await db
-    .select({ correctAnswer: questions.correctAnswer })
+    .select({ correctAnswer: questions.correctAnswer, alternatives: questions.alternatives })
     .from(questions)
-    .where(eq(questions.id, questionId));
+    .where(
+      and(
+        eq(questions.id, questionId),
+        eq(questions.status, "aprovada"),
+        ne(questions.correctAnswer, "Anulado")
+      )
+    );
 
   if (!question) {
     return Response.json({ error: "Questão não encontrada" }, { status: 404 });
+  }
+
+  if (!question.alternatives.some((alt) => alt.letter === selectedAnswer)) {
+    return Response.json({ error: "selectedAnswer inválido" }, { status: 400 });
   }
 
   const isCorrect = selectedAnswer === question.correctAnswer;

@@ -89,6 +89,18 @@ describe("POST /api/practice/attempts", () => {
     expect(response.status).toBe(404);
   });
 
+  it("retorna 400 para selectedAnswer que não é uma alternativa real da questão", async () => {
+    const question = await createApprovedQuestion();
+    const { cookie } = await createUserCookie();
+    const request = new Request("http://localhost:3000/api/practice/attempts", {
+      method: "POST",
+      headers: { cookie, "Content-Type": "application/json" },
+      body: JSON.stringify({ questionId: question.id, selectedAnswer: "Z" }),
+    });
+    const response = await POST(request);
+    expect(response.status).toBe(400);
+  });
+
   it("calcula isCorrect corretamente e grava a tentativa no banco", async () => {
     const question = await createApprovedQuestion();
     const { cookie, userId } = await createUserCookie();

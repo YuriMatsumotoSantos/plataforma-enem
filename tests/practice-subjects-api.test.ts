@@ -10,14 +10,14 @@ function randomTestYear(): number {
 
 async function createUserCookie() {
   const email = `aluno-${crypto.randomUUID()}@example.com`;
-  const signUp = await auth.api.signUpEmail({
+  await auth.api.signUpEmail({
     body: { email, password: "senha-segura-123", name: "Aluno" },
   });
   const signIn = await auth.api.signInEmail({
     body: { email, password: "senha-segura-123" },
     asResponse: true,
   });
-  return { cookie: signIn.headers.get("set-cookie") ?? "", userId: signUp.user.id };
+  return { cookie: signIn.headers.get("set-cookie") ?? "" };
 }
 
 async function insertQuestion(overrides: {

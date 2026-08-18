@@ -177,7 +177,7 @@ export const attempts = pgTable(
       .references(() => questions.id),
     userId: text("user_id")
       .notNull()
-      .references(() => user.id),
+      .references(() => user.id, { onDelete: "cascade" }),
     selectedAnswer: text("selected_answer").notNull(),
     isCorrect: boolean("is_correct").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),

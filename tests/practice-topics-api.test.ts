@@ -73,6 +73,60 @@ describe("GET /api/practice/topics", () => {
     expect(body.topics[0]).toMatchObject({ id: topic.id, name: "Genética", count: 3 });
   });
 
+  it("não lista assunto cujas questões são só pendentes/rejeitadas/anuladas", async () => {
+    const subjectName = `Química ${crypto.randomUUID()}`;
+
+    async function insertQuestion(overrides: {
+      status: "pendente" | "aprovada" | "rejeitada";
+      correctAnswer?: string;
+    }) {
+      const [topic] = await db
+        .insert(topics)
+        .values({
+          id: crypto.randomUUID(),
+          area: "natureza",
+          subject: subjectName,
+          name: `Assunto ${crypto.randomUUID()}`,
+        })
+        .returning();
+
+      await db.insert(questions).values({
+        id: crypto.randomUUID(),
+        year: randomTestYear(),
+        examDay: 1,
+        questionNumber: Math.floor(Math.random() * 500) + 1,
+        area: "natureza",
+        statement: "teste",
+        alternatives: [
+          { letter: "A", text: "1" },
+          { letter: "B", text: "2" },
+          { letter: "C", text: "3" },
+          { letter: "D", text: "4" },
+          { letter: "E", text: "5" },
+        ],
+        correctAnswer: overrides.correctAnswer ?? "A",
+        topicId: topic.id,
+        status: overrides.status,
+      });
+
+      return topic;
+    }
+
+    await insertQuestion({ status: "pendente" });
+    await insertQuestion({ status: "rejeitada" });
+    await insertQuestion({ status: "aprovada", correctAnswer: "Anulado" });
+
+    const cookie = await createUserCookie();
+    const request = new Request(
+      `http://localhost:3000/api/practice/topics?subject=${encodeURIComponent(subjectName)}`,
+      { headers: { cookie } }
+    );
+    const response = await GET(request);
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.topics).toEqual([]);
+  });
+
   it("retorna lista vazia para subject inexistente, sem erro", async () => {
     const cookie = await createUserCookie();
     const request = new Request(
