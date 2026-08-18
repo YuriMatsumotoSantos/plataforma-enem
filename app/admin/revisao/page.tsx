@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +49,21 @@ function isValidStatus(value: string | null): value is Status {
   return STATUSES.some((s) => s === value);
 }
 
+async function fetchStatusCounts(): Promise<Record<Status, number>> {
+  const results = await Promise.all(
+    STATUSES.map((s) =>
+      fetch(`/api/admin/questions?status=${s}&page=1`)
+        .then((response) => (response.ok ? response.json() : { total: 0 }))
+        .catch(() => ({ total: 0 }))
+    )
+  );
+  const next = {} as Record<Status, number>;
+  STATUSES.forEach((s, index) => {
+    next[s] = results[index].total ?? 0;
+  });
+  return next;
+}
+
 function RevisaoContent() {
   const searchParams = useSearchParams();
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
@@ -61,21 +76,6 @@ function RevisaoContent() {
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
-
-  const fetchCounts = useCallback(async () => {
-    const results = await Promise.all(
-      STATUSES.map((s) =>
-        fetch(`/api/admin/questions?status=${s}&page=1`)
-          .then((response) => (response.ok ? response.json() : { total: 0 }))
-          .catch(() => ({ total: 0 }))
-      )
-    );
-    const next = {} as Record<Status, number>;
-    STATUSES.forEach((s, index) => {
-      next[s] = results[index].total ?? 0;
-    });
-    setCounts(next);
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -93,9 +93,12 @@ function RevisaoContent() {
         if (cancelled) return;
         setQuestions(data.questions);
         setTotal(data.total);
+        setError(null);
       })
       .catch((err: Error) => {
-        if (!cancelled) setError(err.message);
+        if (cancelled) return;
+        setError(err.message);
+        setQuestions(null);
       });
     return () => {
       cancelled = true;
@@ -104,19 +107,8 @@ function RevisaoContent() {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all(
-      STATUSES.map((s) =>
-        fetch(`/api/admin/questions?status=${s}&page=1`)
-          .then((response) => (response.ok ? response.json() : { total: 0 }))
-          .catch(() => ({ total: 0 }))
-      )
-    ).then((results) => {
-      if (cancelled) return;
-      const next = {} as Record<Status, number>;
-      STATUSES.forEach((s, index) => {
-        next[s] = results[index].total ?? 0;
-      });
-      setCounts(next);
+    fetchStatusCounts().then((next) => {
+      if (!cancelled) setCounts(next);
     });
     return () => {
       cancelled = true;
@@ -142,7 +134,8 @@ function RevisaoContent() {
         setQuestions(data.questions);
         setTotal(data.total);
       }
-      fetchCounts();
+      const nextCounts = await fetchStatusCounts();
+      setCounts(nextCounts);
     } catch {
       setActionError("Não foi possível conectar. Verifique sua internet e tente novamente.");
     }
