@@ -3,10 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { questions, topics } from "@/db/schema";
 import { GET } from "@/app/api/simulados/available/route";
-
-function randomTestYear(): number {
-  return 90000 + Math.floor(Math.random() * 900000);
-}
+import { randomTestYear } from "@/tests/helpers";
 
 async function createUserCookie() {
   const email = `aluno-${crypto.randomUUID()}@example.com`;

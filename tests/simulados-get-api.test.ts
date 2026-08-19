@@ -3,10 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { questions, simulados, topics } from "@/db/schema";
 import { GET } from "@/app/api/simulados/[id]/route";
-
-function randomTestYear(): number {
-  return 90000 + Math.floor(Math.random() * 900000);
-}
+import { randomTestYear } from "@/tests/helpers";
 
 async function createUserCookie() {
   const email = `aluno-${crypto.randomUUID()}@example.com`;
@@ -111,5 +108,6 @@ describe("GET /api/simulados/[id]", () => {
     const body = await response.json();
     expect(body.questions.map((q: { id: string }) => q.id)).toEqual([q2.id, q1.id]);
     expect(body.answers[q2.id]).toEqual({ selectedAnswer: "B", markedForReview: true });
+    expect(body.questions[0].correctAnswer).toBeUndefined();
   });
 });

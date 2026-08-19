@@ -14,10 +14,7 @@ import {
   pickFielQuestionIds,
   pickMescladoQuestionIds,
 } from "@/lib/simulados";
-
-function randomTestYear(): number {
-  return 90000 + Math.floor(Math.random() * 900000);
-}
+import { randomTestYear } from "@/tests/helpers";
 
 async function insertQuestion(overrides: {
   year: number;
@@ -178,6 +175,11 @@ describe("deriveFielAvailability", () => {
     expect(result.find((r) => r.examDay === 1)!.disponivel).toBe(false);
     expect(result.find((r) => r.examDay === 2)!.disponivel).toBe(true);
     expect(result.every((r) => r.necessarias === 90)).toBe(true);
+  });
+
+  it("marca indisponível quando aprovadas passa de 90 (não só quando fica abaixo)", () => {
+    const result = deriveFielAvailability([{ year: 2025, examDay: 1, aprovadas: 91 }]);
+    expect(result[0].disponivel).toBe(false);
   });
 });
 

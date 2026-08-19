@@ -4,10 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { attempts, questions, simulados, topics } from "@/db/schema";
 import { POST } from "@/app/api/simulados/[id]/finalizar/route";
-
-function randomTestYear(): number {
-  return 90000 + Math.floor(Math.random() * 900000);
-}
+import { randomTestYear } from "@/tests/helpers";
 
 async function createUserCookie() {
   const email = `aluno-${crypto.randomUUID()}@example.com`;
@@ -64,6 +61,30 @@ describe("POST /api/simulados/[id]/finalizar", () => {
     });
     const response = await POST(request, { params: Promise.resolve({ id: "x" }) });
     expect(response.status).toBe(401);
+  });
+
+  it("retorna 404 quando o simulado é de outro usuário", async () => {
+    const question = await insertApprovedQuestion();
+    const owner = await createUserCookie();
+    const [simulado] = await db
+      .insert(simulados)
+      .values({
+        id: crypto.randomUUID(),
+        userId: owner.userId,
+        mode: "mesclado",
+        examDay: 1,
+        questionIds: [question.id],
+        durationSeconds: 19800,
+      })
+      .returning();
+
+    const other = await createUserCookie();
+    const request = new Request(`http://localhost:3000/api/simulados/${simulado.id}/finalizar`, {
+      method: "POST",
+      headers: { cookie: other.cookie },
+    });
+    const response = await POST(request, { params: Promise.resolve({ id: simulado.id }) });
+    expect(response.status).toBe(404);
   });
 
   it("marca finalizado e grava attempts só das questões respondidas e não-anuladas", async () => {

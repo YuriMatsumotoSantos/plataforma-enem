@@ -26,12 +26,15 @@ export async function POST(
     .filter(([, a]) => a.selectedAnswer !== null)
     .map(([questionId]) => questionId);
 
+  let answeredQuestions: { id: string; correctAnswer: string }[] = [];
   if (answeredIds.length > 0) {
-    const answeredQuestions = await db
+    answeredQuestions = await db
       .select({ id: questions.id, correctAnswer: questions.correctAnswer })
       .from(questions)
       .where(inArray(questions.id, answeredIds));
+  }
 
+  await db.transaction(async (tx) => {
     const attemptRows = answeredQuestions
       .filter((q) => q.correctAnswer !== "Anulado")
       .map((q) => ({
@@ -43,14 +46,14 @@ export async function POST(
       }));
 
     if (attemptRows.length > 0) {
-      await db.insert(attempts).values(attemptRows);
+      await tx.insert(attempts).values(attemptRows);
     }
-  }
 
-  await db
-    .update(simulados)
-    .set({ status: "finalizado", finishedAt: new Date() })
-    .where(eq(simulados.id, id));
+    await tx
+      .update(simulados)
+      .set({ status: "finalizado", finishedAt: new Date() })
+      .where(eq(simulados.id, id));
+  });
 
   return Response.json({ ok: true });
 }

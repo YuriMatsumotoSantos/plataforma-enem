@@ -1,10 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { db } from "@/lib/db";
 import { questions, simulados, topics, user } from "@/db/schema";
-
-function randomTestYear(): number {
-  return 90000 + (Date.now() % 9000);
-}
+import { randomTestYear } from "@/tests/helpers";
 
 async function createTestQuestionAndUser() {
   const [topic] = await db

@@ -153,6 +153,15 @@ export default function SimuladoPage() {
   }
 
   const question = data.questions[currentIndex];
+
+  if (!question) {
+    return (
+      <p className="mx-auto max-w-2xl px-4 py-8 text-destructive">
+        Não foi possível carregar as questões deste simulado.
+      </p>
+    );
+  }
+
   const currentAnswer = answers[question.id] ?? { selectedAnswer: null, markedForReview: false };
 
   return (

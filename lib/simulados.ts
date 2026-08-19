@@ -114,7 +114,7 @@ export function deriveFielAvailability(
   return rows.map((row) => ({
     ...row,
     necessarias: FIEL_REQUIRED,
-    disponivel: row.aprovadas >= FIEL_REQUIRED,
+    disponivel: row.aprovadas === FIEL_REQUIRED,
   }));
 }
 

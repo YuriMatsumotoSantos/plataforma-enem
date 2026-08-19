@@ -37,10 +37,10 @@ export function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-// Deny-by-default: match every /api/* route, plus /admin/* page routes.
-// Public routes are exempted inside middleware() above (exact path checks),
-// not here, so new protected routes are covered automatically instead of
-// requiring an opt-in addition.
+// Deny-by-default: match every /api/* route, plus /admin/*, /pratica/*, and
+// /simulados/* page routes. Only the exclusions inside middleware() above
+// (exact path checks) are automatic — a new protected *route prefix* still
+// needs its own opt-in entry added to the matcher array below.
 export const config = {
   matcher: ["/api/:path*", "/admin/:path*", "/pratica/:path*", "/simulados/:path*"],
 };
