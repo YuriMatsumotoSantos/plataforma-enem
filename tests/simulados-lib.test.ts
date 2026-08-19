@@ -160,6 +160,15 @@ describe("pickMescladoQuestionIds", () => {
       area: "natureza",
       correctAnswer: "Anulado",
     });
+    // Garante pool suficiente (>=45) em cada área do dia 2, senão o guard de
+    // pickMescladoQuestionIds lança erro por pool insuficiente — a anulada
+    // acima não conta para esse total.
+    for (let i = 0; i < 45; i++) {
+      await insertQuestion({ year: year + 1, examDay: 2, questionNumber: i + 2, area: "natureza" });
+    }
+    for (let i = 0; i < 45; i++) {
+      await insertQuestion({ year: year + 2, examDay: 2, questionNumber: i + 1, area: "matematica" });
+    }
 
     const ids = await pickMescladoQuestionIds(2);
     expect(ids).not.toContain(anulada.id);
