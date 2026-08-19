@@ -16,7 +16,7 @@ import {
 } from "@/lib/simulados";
 
 function randomTestYear(): number {
-  return 90000 + Math.floor(Math.random() * 9000);
+  return 90000 + Math.floor(Math.random() * 900000);
 }
 
 async function insertQuestion(overrides: {

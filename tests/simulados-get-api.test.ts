@@ -5,7 +5,7 @@ import { questions, simulados, topics } from "@/db/schema";
 import { GET } from "@/app/api/simulados/[id]/route";
 
 function randomTestYear(): number {
-  return 90000 + Math.floor(Math.random() * 9000);
+  return 90000 + Math.floor(Math.random() * 900000);
 }
 
 async function createUserCookie() {
