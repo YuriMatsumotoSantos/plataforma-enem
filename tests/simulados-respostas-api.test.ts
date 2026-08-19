@@ -156,6 +156,51 @@ describe("PATCH /api/simulados/[id]/respostas", () => {
     expect(saved.answers[question.id]).toEqual({ selectedAnswer: "B", markedForReview: true });
   });
 
+  it("patchear a questão B não apaga a resposta já salva da questão A", async () => {
+    const questionA = await insertApprovedQuestion();
+    const questionB = await insertApprovedQuestion();
+    const { cookie, userId } = await createUserCookie();
+    const [simulado] = await db
+      .insert(simulados)
+      .values({
+        id: crypto.randomUUID(),
+        userId,
+        mode: "mesclado",
+        examDay: 1,
+        questionIds: [questionA.id, questionB.id],
+        durationSeconds: 19800,
+      })
+      .returning();
+
+    const requestA = new Request(
+      `http://localhost:3000/api/simulados/${simulado.id}/respostas`,
+      {
+        method: "PATCH",
+        headers: { cookie, "Content-Type": "application/json" },
+        body: JSON.stringify({ questionId: questionA.id, selectedAnswer: "C" }),
+      }
+    );
+    expect(
+      (await PATCH(requestA, { params: Promise.resolve({ id: simulado.id }) })).status
+    ).toBe(200);
+
+    const requestB = new Request(
+      `http://localhost:3000/api/simulados/${simulado.id}/respostas`,
+      {
+        method: "PATCH",
+        headers: { cookie, "Content-Type": "application/json" },
+        body: JSON.stringify({ questionId: questionB.id, selectedAnswer: "D" }),
+      }
+    );
+    expect(
+      (await PATCH(requestB, { params: Promise.resolve({ id: simulado.id }) })).status
+    ).toBe(200);
+
+    const [saved] = await db.select().from(simulados).where(eq(simulados.id, simulado.id));
+    expect(saved.answers[questionA.id]).toEqual({ selectedAnswer: "C", markedForReview: false });
+    expect(saved.answers[questionB.id]).toEqual({ selectedAnswer: "D", markedForReview: false });
+  });
+
   it("retorna 400 ao tentar responder um simulado já finalizado", async () => {
     const question = await insertApprovedQuestion();
     const { cookie, userId } = await createUserCookie();

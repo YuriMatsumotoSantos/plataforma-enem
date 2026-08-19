@@ -1,4 +1,4 @@
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { requireUser } from "@/lib/session";
 import { db } from "@/lib/db";
 import { attempts, questions, simulados } from "@/db/schema";
@@ -34,7 +34,20 @@ export async function POST(
       .where(inArray(questions.id, answeredIds));
   }
 
+  let alreadyFinalized = false;
+
   await db.transaction(async (tx) => {
+    const [updatedSimulado] = await tx
+      .update(simulados)
+      .set({ status: "finalizado", finishedAt: new Date() })
+      .where(and(eq(simulados.id, id), eq(simulados.status, "em_andamento")))
+      .returning({ id: simulados.id });
+
+    if (!updatedSimulado) {
+      alreadyFinalized = true;
+      return;
+    }
+
     const attemptRows = answeredQuestions
       .filter((q) => q.correctAnswer !== "Anulado")
       .map((q) => ({
@@ -48,12 +61,11 @@ export async function POST(
     if (attemptRows.length > 0) {
       await tx.insert(attempts).values(attemptRows);
     }
-
-    await tx
-      .update(simulados)
-      .set({ status: "finalizado", finishedAt: new Date() })
-      .where(eq(simulados.id, id));
   });
+
+  if (alreadyFinalized) {
+    return Response.json({ error: "Este simulado já foi finalizado" }, { status: 400 });
+  }
 
   return Response.json({ ok: true });
 }

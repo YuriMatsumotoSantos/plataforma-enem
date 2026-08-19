@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { requireUser } from "@/lib/session";
 import { db } from "@/lib/db";
 import { simulados } from "@/db/schema";
@@ -53,16 +53,22 @@ export async function PATCH(
     return Response.json({ error: "Questão não faz parte deste simulado" }, { status: 400 });
   }
 
-  const current = simulado.answers[questionId] ?? { selectedAnswer: null, markedForReview: false };
-  const updated = {
-    selectedAnswer:
-      selectedAnswer === undefined ? current.selectedAnswer : (selectedAnswer as string | null),
-    markedForReview: markedForReview === undefined ? current.markedForReview : markedForReview,
-  };
+  // Merge only the fields actually present in the request, computed by Postgres
+  // against the row's current value at UPDATE time — atomic against concurrent
+  // PATCHes for the same or different questionId (unlike an app-level read+merge+write).
+  const patch: Record<string, unknown> = {};
+  if (selectedAnswer !== undefined) patch.selectedAnswer = selectedAnswer;
+  if (markedForReview !== undefined) patch.markedForReview = markedForReview;
 
   await db
     .update(simulados)
-    .set({ answers: { ...simulado.answers, [questionId]: updated } })
+    .set({
+      answers: sql`jsonb_set(
+        ${simulados.answers},
+        ARRAY[${questionId}],
+        COALESCE(${simulados.answers} -> ${questionId}, '{"selectedAnswer": null, "markedForReview": false}'::jsonb) || ${JSON.stringify(patch)}::jsonb
+      )`,
+    })
     .where(eq(simulados.id, id));
 
   return Response.json({ ok: true });
