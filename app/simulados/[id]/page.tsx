@@ -185,7 +185,7 @@ export default function SimuladoPage() {
           const isCurrent = index === currentIndex;
           let variant: "default" | "outline" | "secondary" = "outline";
           if (isCurrent) variant = "default";
-          else if (a?.markedForReview || a?.selectedAnswer) variant = "secondary";
+          else if (a?.selectedAnswer) variant = "secondary";
           return (
             <Button
               key={q.id}
