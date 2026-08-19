@@ -103,7 +103,13 @@ export async function pickMescladoQuestionIds(examDay: 1 | 2): Promise<string[]>
           ne(questions.correctAnswer, "Anulado")
         )
       );
-    picked.push(...pickBalancedByTopic(rows, QUESTIONS_PER_AREA));
+    const areaPicked = pickBalancedByTopic(rows, QUESTIONS_PER_AREA);
+    if (areaPicked.length < QUESTIONS_PER_AREA) {
+      throw new Error(
+        `Pool insuficiente para montar o simulado mesclado: área ${area} tem apenas ${areaPicked.length}/${QUESTIONS_PER_AREA} questões aprovadas`
+      );
+    }
+    picked.push(...areaPicked);
   }
   return picked;
 }
