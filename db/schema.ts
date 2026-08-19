@@ -190,5 +190,38 @@ export const attempts = pgTable(
 
 export type Attempt = typeof attempts.$inferSelect;
 
+export const simuladoMode = pgEnum("simulado_mode", ["mesclado", "fiel"]);
+export const simuladoStatus = pgEnum("simulado_status", ["em_andamento", "finalizado"]);
+
+export type SimuladoAnswer = { selectedAnswer: string | null; markedForReview: boolean };
+
+export const simulados = pgTable(
+  "simulados",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    mode: simuladoMode("mode").notNull(),
+    examDay: integer("exam_day").notNull(),
+    examYear: integer("exam_year"),
+    status: simuladoStatus("status").default("em_andamento").notNull(),
+    questionIds: jsonb("question_ids").$type<string[]>().notNull(),
+    answers: jsonb("answers")
+      .$type<Record<string, SimuladoAnswer>>()
+      .notNull()
+      .default({}),
+    durationSeconds: integer("duration_seconds").notNull(),
+    startedAt: timestamp("started_at").defaultNow().notNull(),
+    finishedAt: timestamp("finished_at"),
+  },
+  (table) => [
+    index("simulados_userId_idx").on(table.userId),
+    index("simulados_status_idx").on(table.status),
+  ]
+);
+
+export type Simulado = typeof simulados.$inferSelect;
+
 export type Topic = typeof topics.$inferSelect;
 export type Question = typeof questions.$inferSelect;
