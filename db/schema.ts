@@ -168,5 +168,27 @@ export const questionsRelations = relations(questions, ({ one }) => ({
   }),
 }));
 
+export const attempts = pgTable(
+  "attempts",
+  {
+    id: text("id").primaryKey(),
+    questionId: text("question_id")
+      .notNull()
+      .references(() => questions.id),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    selectedAnswer: text("selected_answer").notNull(),
+    isCorrect: boolean("is_correct").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("attempts_question_idx").on(table.questionId),
+    index("attempts_user_idx").on(table.userId),
+  ]
+);
+
+export type Attempt = typeof attempts.$inferSelect;
+
 export type Topic = typeof topics.$inferSelect;
 export type Question = typeof questions.$inferSelect;

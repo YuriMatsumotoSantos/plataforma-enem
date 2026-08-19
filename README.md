@@ -53,3 +53,11 @@ Pipeline de ingestão local (não roda no site em produção — só no seu comp
 4. Acesse `/admin/revisao` logado com uma conta `admin` (marque
    `role = 'admin'` na tabela `user` do banco) para aprovar, corrigir ou
    rejeitar cada questão extraída
+
+## Prática por assunto
+
+Qualquer aluno logado (não precisa ser `admin`) acessa `/pratica`, escolhe uma
+matéria e um assunto, e responde questões aprovadas uma de cada vez, com
+feedback imediato. Cada tentativa é gravada na tabela `attempts` — hoje
+nenhuma tela lê esses dados, é preparação para o dashboard/recomendação
+adaptativa (subsistema futuro).

@@ -20,6 +20,7 @@
 - No component-testing framework exists in this repo for Client Components — the 2 page-only tasks (Task 4, Task 5) are verified via real browser interaction, not automated tests, matching the established pattern for `/entrar` and `/admin/revisao`.
 - This project's shadcn install is Base UI-based, not classic Radix — `Button` has no `asChild` prop; use `render={<Link .../>}` instead (established pattern in `app/components/Header.tsx` and `app/admin/revisao/page.tsx`).
 - Dynamic route params (`[subject]`, `[topicId]`) are read via `useParams()` from `next/navigation` in Client Components — confirmed via this repo's own installed Next.js 16.3.0 docs (`node_modules/next/dist/docs/01-app/03-api-reference/04-functions/use-params.md`) that this hook does not require unwrapping a Promise and (since this project has no `cacheComponents` config in `next.config.ts`) does not require a `<Suspense>` boundary the way `useSearchParams()` did in `/admin/revisao`. If `npx next build` in Task 4 or 5 produces a prerender error mentioning these pages, that assumption was wrong for this exact Next.js patch version — stop and report it rather than guessing a fix, the same way the `useSearchParams()` Suspense requirement was originally discovered in this repo.
+- **`useParams()`'s `subject` value must be decoded before use**: `useParams()` returns the raw, still-URL-encoded path segment, not the decoded string. Found and fixed during Task 4's review (a real bug in this plan's original Task 4 code — since corrected here for Task 5 too, and in the already-merged Task 4 code): read it as `const subject = decodeURIComponent(params.subject);`, and continue using that decoded `subject` everywhere (fetch URLs, headings, hrefs — re-encoding with `encodeURIComponent` only at the point of building a new URL). Skipping the decode double-encodes outgoing API queries and garbles the page for any matéria name with accented characters (e.g. "Matemática"). `topicId` does not need this — it's always a plain UUID with no special characters.
 - Migrations in this repo are generated, not hand-written: `npm run db:generate` (reads `db/schema.ts`, writes a new numbered SQL file under `drizzle/`) then `npm run db:migrate` (applies it to `DATABASE_URL`). The generated SQL file must be committed — CI runs `npx drizzle-kit migrate` before tests.
 
 ---
@@ -1148,7 +1149,8 @@ function shuffle<T>(items: T[]): T[] {
 export default function PraticaSessaoPage() {
   const params = useParams<{ subject: string; topicId: string }>();
   const router = useRouter();
-  const { subject, topicId } = params;
+  const subject = decodeURIComponent(params.subject);
+  const { topicId } = params;
 
   const [questions, setQuestions] = useState<PracticeQuestion[] | null>(null);
   const [error, setError] = useState<string | null>(null);

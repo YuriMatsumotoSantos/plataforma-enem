@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { NextRequest } from "next/server";
-import { middleware } from "@/middleware";
+import { middleware, config } from "@/middleware";
 
 describe("middleware", () => {
   it("retorna 401 para uma rota protegida sem cookie de sessão", () => {
@@ -56,5 +56,9 @@ describe("middleware", () => {
     });
     const response = middleware(request);
     expect(response.status).toBe(200);
+  });
+
+  it("inclui /pratica/:path* no matcher de rotas protegidas", () => {
+    expect(config.matcher).toContain("/pratica/:path*");
   });
 });
