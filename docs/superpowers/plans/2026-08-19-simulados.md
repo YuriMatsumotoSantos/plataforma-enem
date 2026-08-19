@@ -243,7 +243,7 @@ import {
 } from "@/lib/simulados";
 
 function randomTestYear(): number {
-  return 90000 + Math.floor(Math.random() * 9000);
+  return 90000 + Math.floor(Math.random() * 900000);
 }
 
 async function insertQuestion(overrides: {
@@ -708,7 +708,7 @@ import { questions, topics } from "@/db/schema";
 import { GET } from "@/app/api/simulados/available/route";
 
 function randomTestYear(): number {
-  return 90000 + Math.floor(Math.random() * 9000);
+  return 90000 + Math.floor(Math.random() * 900000);
 }
 
 async function createUserCookie() {
@@ -848,7 +848,7 @@ import { questions, simulados, topics } from "@/db/schema";
 import { POST, GET } from "@/app/api/simulados/route";
 
 function randomTestYear(): number {
-  return 90000 + Math.floor(Math.random() * 9000);
+  return 90000 + Math.floor(Math.random() * 900000);
 }
 
 async function createUserCookie() {
@@ -1174,7 +1174,7 @@ import { questions, simulados, topics } from "@/db/schema";
 import { GET } from "@/app/api/simulados/[id]/route";
 
 function randomTestYear(): number {
-  return 90000 + Math.floor(Math.random() * 9000);
+  return 90000 + Math.floor(Math.random() * 900000);
 }
 
 async function createUserCookie() {
@@ -1384,7 +1384,7 @@ import { questions, simulados, topics } from "@/db/schema";
 import { PATCH } from "@/app/api/simulados/[id]/respostas/route";
 
 function randomTestYear(): number {
-  return 90000 + Math.floor(Math.random() * 9000);
+  return 90000 + Math.floor(Math.random() * 900000);
 }
 
 async function createUserCookie() {
@@ -1658,7 +1658,7 @@ import { attempts, questions, simulados, topics } from "@/db/schema";
 import { POST } from "@/app/api/simulados/[id]/finalizar/route";
 
 function randomTestYear(): number {
-  return 90000 + Math.floor(Math.random() * 9000);
+  return 90000 + Math.floor(Math.random() * 900000);
 }
 
 async function createUserCookie() {
@@ -1902,7 +1902,7 @@ import { questions, simulados, topics } from "@/db/schema";
 import { GET } from "@/app/api/simulados/[id]/resultado/route";
 
 function randomTestYear(): number {
-  return 90000 + Math.floor(Math.random() * 9000);
+  return 90000 + Math.floor(Math.random() * 900000);
 }
 
 async function createUserCookie() {
