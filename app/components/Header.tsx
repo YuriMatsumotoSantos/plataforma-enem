@@ -28,6 +28,7 @@ export function Header() {
       {isPending ? null : data?.user ? (
         <div className="flex items-center gap-3 text-sm">
           <Button render={<Link href="/pratica">Praticar</Link>} variant="link" />
+          <Button render={<Link href="/simulados">Simulados</Link>} variant="link" />
           <span>{data.user.name}</span>
           <Button type="button" variant="outline" size="sm" onClick={handleSignOut}>
             Sair

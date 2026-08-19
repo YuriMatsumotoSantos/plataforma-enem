@@ -42,5 +42,5 @@ export function middleware(request: NextRequest) {
 // not here, so new protected routes are covered automatically instead of
 // requiring an opt-in addition.
 export const config = {
-  matcher: ["/api/:path*", "/admin/:path*", "/pratica/:path*"],
+  matcher: ["/api/:path*", "/admin/:path*", "/pratica/:path*", "/simulados/:path*"],
 };

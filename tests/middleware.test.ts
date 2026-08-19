@@ -61,4 +61,8 @@ describe("middleware", () => {
   it("inclui /pratica/:path* no matcher de rotas protegidas", () => {
     expect(config.matcher).toContain("/pratica/:path*");
   });
+
+  it("inclui /simulados/:path* no matcher de rotas protegidas", () => {
+    expect(config.matcher).toContain("/simulados/:path*");
+  });
 });
