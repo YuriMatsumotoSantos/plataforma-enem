@@ -214,6 +214,25 @@ describe("getFielAvailability (integração)", () => {
     expect(found?.aprovadas).toBe(3);
     expect(found?.disponivel).toBe(false);
   });
+
+  it("conta questões anuladas junto com as demais aprovadas (fiel inclui anuladas)", async () => {
+    const year = randomTestYear();
+    for (let i = 0; i < 2; i++) {
+      await insertQuestion({ year, examDay: 1, questionNumber: i + 1, area: "linguagens" });
+    }
+    const anulada = await insertQuestion({
+      year,
+      examDay: 1,
+      questionNumber: 3,
+      area: "linguagens",
+      correctAnswer: "Anulado",
+    });
+
+    const result = await getFielAvailability();
+    const found = result.find((r) => r.year === year && r.examDay === 1);
+    expect(found?.aprovadas).toBe(3);
+    expect(anulada.correctAnswer).toBe("Anulado");
+  });
 });
 
 describe("getMescladoAvailability (integração)", () => {
@@ -234,6 +253,32 @@ describe("getMescladoAvailability (integração)", () => {
       .areas.find((a) => a.area === "linguagens")!.aprovadas;
 
     expect(afterCount - beforeCount).toBe(4);
+  });
+
+  it("não conta questões anuladas na contagem da área (mesclado exclui anuladas)", async () => {
+    const before = await getMescladoAvailability();
+    const beforeCount = before
+      .find((d) => d.examDay === 1)!
+      .areas.find((a) => a.area === "humanas")!.aprovadas;
+
+    const year = randomTestYear();
+    for (let i = 0; i < 3; i++) {
+      await insertQuestion({ year, examDay: 1, questionNumber: i + 1, area: "humanas" });
+    }
+    await insertQuestion({
+      year,
+      examDay: 1,
+      questionNumber: 4,
+      area: "humanas",
+      correctAnswer: "Anulado",
+    });
+
+    const after = await getMescladoAvailability();
+    const afterCount = after
+      .find((d) => d.examDay === 1)!
+      .areas.find((a) => a.area === "humanas")!.aprovadas;
+
+    expect(afterCount - beforeCount).toBe(3);
   });
 });
 
