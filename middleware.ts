@@ -5,10 +5,10 @@ import { getSessionCookie } from "better-auth/cookies";
 // it does not validate the session (signature, expiry, revocation). This is
 // an outer, fail-fast defense layer only; full validation happens
 // server-side in each route (e.g. app/api/me/route.ts via auth.api.getSession).
-// This now also covers /admin page routes (e.g. app/admin/revisao/page.tsx):
-// the middleware only checks for cookie presence there too, the role: admin
-// check still happens server-side in requireAdmin inside the /api/admin/*
-// routes those pages consume.
+// This now also covers /admin, /pratica, /simulados, and /redacao page routes
+// (e.g. app/admin/revisao/page.tsx): the middleware only checks for cookie
+// presence there too, the role: admin check still happens server-side in
+// requireAdmin inside the /api/admin/* routes those pages consume.
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -37,10 +37,17 @@ export function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-// Deny-by-default: match every /api/* route, plus /admin/*, /pratica/*, and
-// /simulados/* page routes. Only the exclusions inside middleware() above
-// (exact path checks) are automatic — a new protected *route prefix* still
-// needs its own opt-in entry added to the matcher array below.
+// Deny-by-default: match every /api/* route, plus /admin/*, /pratica/*,
+// /simulados/*, and /redacao/* page routes. Only the exclusions inside
+// middleware() above (exact path checks) are automatic — a new protected
+// *route prefix* still needs its own opt-in entry added to the matcher
+// array below.
 export const config = {
-  matcher: ["/api/:path*", "/admin/:path*", "/pratica/:path*", "/simulados/:path*"],
+  matcher: [
+    "/api/:path*",
+    "/admin/:path*",
+    "/pratica/:path*",
+    "/simulados/:path*",
+    "/redacao/:path*",
+  ],
 };
