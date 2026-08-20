@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { attempts, questions, topics, topicProgress, user } from "@/db/schema";
 import {
@@ -120,6 +121,41 @@ describe("getOrUpdateTopicProgress", () => {
     const { topic, testUser } = await createFixture();
     const progress = await getOrUpdateTopicProgress(testUser.id, topic.id);
     expect(progress).toBeNull();
+  });
+
+  it("uma segunda inserção concorrente para o mesmo (userId, topicId) não lança erro de unique constraint", async () => {
+    const { topic, testUser } = await createFixture();
+    const now = new Date();
+    const base = {
+      stability: 1,
+      difficulty: 5,
+      state: 1,
+      lapses: 0,
+      reps: 1,
+      dueAt: now,
+      lastReviewedAt: now,
+    };
+
+    const [first] = await db
+      .insert(topicProgress)
+      .values({ id: crypto.randomUUID(), userId: testUser.id, topicId: topic.id, ...base })
+      .onConflictDoNothing({ target: [topicProgress.userId, topicProgress.topicId] })
+      .returning();
+    expect(first).toBeDefined();
+
+    const secondInsert = await db
+      .insert(topicProgress)
+      .values({ id: crypto.randomUUID(), userId: testUser.id, topicId: topic.id, ...base })
+      .onConflictDoNothing({ target: [topicProgress.userId, topicProgress.topicId] })
+      .returning();
+
+    expect(secondInsert).toEqual([]);
+
+    const [winner] = await db
+      .select()
+      .from(topicProgress)
+      .where(and(eq(topicProgress.userId, testUser.id), eq(topicProgress.topicId, topic.id)));
+    expect(winner!.id).toBe(first!.id);
   });
 });
 

@@ -78,8 +78,15 @@ export async function getOrUpdateTopicProgress(
     const [inserted] = await db
       .insert(topicProgress)
       .values({ id: crypto.randomUUID(), userId, topicId, ...progress })
+      .onConflictDoNothing({ target: [topicProgress.userId, topicProgress.topicId] })
       .returning();
-    return inserted;
+    if (inserted) return inserted;
+
+    const [winner] = await db
+      .select()
+      .from(topicProgress)
+      .where(and(eq(topicProgress.userId, userId), eq(topicProgress.topicId, topicId)));
+    return winner ?? null;
   }
 
   const updated = await applyProgressUpdate(existing.id, existing.lastReviewedAt, progress);
