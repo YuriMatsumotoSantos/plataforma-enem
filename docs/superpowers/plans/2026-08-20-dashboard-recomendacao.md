@@ -647,15 +647,27 @@ export async function getOrUpdateTopicProgress(
   const correct = newAttempts.filter((a) => a.isCorrect).length;
   const grade = gradeFromAccuracy(correct, newAttempts.length);
   const now = new Date();
-  const { card: nextCard } = scheduler.next(cardFromProgress(existing), now, grade);
+  const { card: nextCard } = scheduler.next(cardFromProgress(existing ?? null), now, grade);
   const progress = progressFromCard(nextCard);
 
   if (!existing) {
+    // onConflictDoNothing guards the same race applyProgressUpdate guards on
+    // the update path: two near-simultaneous first-ever reviews of the same
+    // (userId, topicId) must not both insert (topic_progress has a unique
+    // constraint on that pair) — the loser falls back to the winner's row
+    // instead of throwing an unhandled unique-violation error.
     const [inserted] = await db
       .insert(topicProgress)
       .values({ id: crypto.randomUUID(), userId, topicId, ...progress })
+      .onConflictDoNothing({ target: [topicProgress.userId, topicProgress.topicId] })
       .returning();
-    return inserted;
+    if (inserted) return inserted;
+
+    const [winner] = await db
+      .select()
+      .from(topicProgress)
+      .where(and(eq(topicProgress.userId, userId), eq(topicProgress.topicId, topicId)));
+    return winner ?? null;
   }
 
   const updated = await applyProgressUpdate(existing.id, existing.lastReviewedAt, progress);
