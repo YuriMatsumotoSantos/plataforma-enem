@@ -49,5 +49,6 @@ export const config = {
     "/pratica/:path*",
     "/simulados/:path*",
     "/redacao/:path*",
+    "/dashboard/:path*",
   ],
 };
