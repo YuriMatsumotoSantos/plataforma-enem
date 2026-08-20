@@ -225,3 +225,48 @@ export type Simulado = typeof simulados.$inferSelect;
 
 export type Topic = typeof topics.$inferSelect;
 export type Question = typeof questions.$inferSelect;
+
+export const temas = pgTable("temas", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type Tema = typeof temas.$inferSelect;
+
+export type RedacaoScores = {
+  competencia1: number;
+  competencia2: number;
+  competencia3: number;
+  competencia4: number;
+  competencia5: number;
+};
+
+export type RedacaoFeedback = {
+  justificativas: string[];
+  comentarioGeral: string;
+};
+
+export const redacoes = pgTable(
+  "redacoes",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    temaId: text("tema_id")
+      .notNull()
+      .references(() => temas.id),
+    text: text("text").notNull(),
+    scores: jsonb("scores").$type<RedacaoScores>().notNull(),
+    notaTotal: integer("nota_total").notNull(),
+    feedback: jsonb("feedback").$type<RedacaoFeedback>().notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("redacoes_userId_idx").on(table.userId),
+    index("redacoes_temaId_idx").on(table.temaId),
+  ]
+);
+
+export type Redacao = typeof redacoes.$inferSelect;
