@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { count, desc, eq } from "drizzle-orm";
 import { requireUser } from "@/lib/session";
 import { db } from "@/lib/db";
 import { redacoes, temas } from "@/db/schema";
@@ -6,6 +6,7 @@ import { gradeRedacao } from "@/lib/redacao";
 
 const MIN_WORDS = 50;
 const MAX_CHARS = 3000;
+const PAGE_SIZE = 20;
 
 export async function POST(request: Request) {
   const session = await requireUser(request);
@@ -70,4 +71,44 @@ export async function POST(request: Request) {
     .returning();
 
   return Response.json(saved);
+}
+
+function parsePage(value: string | null): number {
+  if (!value || !/^\d+$/.test(value)) {
+    return 1;
+  }
+  const parsed = Number(value);
+  return parsed >= 1 ? parsed : 1;
+}
+
+export async function GET(request: Request) {
+  const session = await requireUser(request);
+  if (!session) {
+    return Response.json({ error: "Não autenticado" }, { status: 401 });
+  }
+
+  const url = new URL(request.url);
+  const page = parsePage(url.searchParams.get("page"));
+
+  const [{ value: total }] = await db
+    .select({ value: count() })
+    .from(redacoes)
+    .where(eq(redacoes.userId, session.user.id));
+
+  const rows = await db
+    .select({
+      id: redacoes.id,
+      temaId: redacoes.temaId,
+      temaTitle: temas.title,
+      notaTotal: redacoes.notaTotal,
+      createdAt: redacoes.createdAt,
+    })
+    .from(redacoes)
+    .innerJoin(temas, eq(redacoes.temaId, temas.id))
+    .where(eq(redacoes.userId, session.user.id))
+    .orderBy(desc(redacoes.createdAt))
+    .limit(PAGE_SIZE)
+    .offset((page - 1) * PAGE_SIZE);
+
+  return Response.json({ redacoes: rows, page, pageSize: PAGE_SIZE, total });
 }
