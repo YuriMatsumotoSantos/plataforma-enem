@@ -149,7 +149,16 @@ export async function recomputeAllPending(userId: string): Promise<void> {
     .innerJoin(questions, eq(questions.id, attempts.questionId))
     .where(and(eq(attempts.userId, userId), inArray(questions.topicId, topicIds)));
 
-  const now = attemptRows.length > 0 ? new Date(attemptRows[0].dbNow) : new Date();
+  // Asserted rather than falling back to `new Date()`: a silent fallback here
+  // would reintroduce the exact Node/Postgres clock-skew bug this function's
+  // Postgres-sourced `now` exists to avoid, with nothing to catch it if a
+  // future change ever violates the invariant above.
+  if (attemptRows.length === 0) {
+    throw new Error(
+      "recomputeAllPending: attemptRows vazio para topicIds vindos de getTopicsNeedingRecompute — invariante violado"
+    );
+  }
+  const now = new Date(attemptRows[0].dbNow);
 
   const attemptsByTopic = new Map<string, { isCorrect: boolean; createdAt: Date }[]>();
   for (const row of attemptRows) {

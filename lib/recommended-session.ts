@@ -107,7 +107,13 @@ export async function getRecommendedSession(userId: string) {
   const now = new Date();
   const vencidos = selectVencidos(rows, now);
   const fracos = selectFracos(rows);
-  const needed = MAX_TOPICS - vencidos.length - fracos.length;
+  // A topic can be both overdue and weak at once, so vencidos and fracos
+  // aren't disjoint — count distinct topicIds, not summed list lengths, or
+  // this under-counts how many slots are actually free and skips the
+  // never-attempted fallback when selectRecommendedTopics's own dedup would
+  // still have room for it.
+  const coveredTopicIds = new Set([...vencidos, ...fracos].map((t) => t.topicId));
+  const needed = MAX_TOPICS - coveredTopicIds.size;
   const neverAttempted = needed > 0 ? shuffle(await getNeverAttemptedTopics(userId)) : [];
 
   // Named selectedTopics/poolQuestions, not topics/questions, so they don't
