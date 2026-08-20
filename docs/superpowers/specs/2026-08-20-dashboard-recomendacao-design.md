@@ -57,7 +57,7 @@ Função central `getOrUpdateTopicProgress(userId, topicId)`, chamada sempre que
    - ≥ 40% → Hard (2)
    - < 40% → Again (1)
 5. Chama `ts-fsrs`'s `next(cardAtual, now, nota)`, pega o novo estado.
-6. Upsert em `topic_progress` com `lastReviewedAt = createdAt` da tentativa mais recente do lote.
+6. Upsert em `topic_progress` com `lastReviewedAt = now` (o instante do próprio recálculo, não o `createdAt` de nenhuma tentativa) — como tanto a atualização quanto a checagem de "vencido" só acontecem de forma preguiçosa, no carregamento do dashboard/sessão recomendada, usar o mesmo relógio para as duas coisas mantém o sistema internamente consistente mesmo sem refletir com precisão o instante exato de cada resposta.
 
 **Guarda de concorrência:** o `UPDATE` inclui `WHERE last_reviewed_at = $valorLidoAntes`; se zero linhas forem afetadas (outra requisição já processou esse lote — ex: duas abas abertas), a requisição descarta seu resultado sem re-aplicar. Mesmo padrão de guarda atômica já usado no `finalizar` de Simulados (subsistema 4).
 
