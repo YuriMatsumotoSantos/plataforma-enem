@@ -12,6 +12,9 @@ function countWords(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
+/** Thrown for API-level failures whose message is already Portuguese and safe to show as-is. */
+class ApiError extends Error {}
+
 export default function EscreverRedacaoPage() {
   const params = useParams<{ temaId: string }>();
   const router = useRouter();
@@ -34,6 +37,9 @@ export default function EscreverRedacaoPage() {
         if (cancelled || data === null) return;
         const tema = data.temas.find((t: { id: string }) => t.id === params.temaId);
         setTemaTitle(tema ? tema.title : null);
+      })
+      .catch(() => {
+        if (!cancelled) setError("Erro ao carregar tema. Tente novamente.");
       });
     return () => {
       cancelled = true;
@@ -54,12 +60,12 @@ export default function EscreverRedacaoPage() {
       });
       if (!response.ok) {
         const body = await response.json().catch(() => ({ error: "Erro ao corrigir a redação." }));
-        throw new Error(body.error ?? "Erro ao corrigir a redação.");
+        throw new ApiError(body.error ?? "Erro ao corrigir a redação.");
       }
       const redacao = await response.json();
       router.push(`/redacao/resultado/${redacao.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao corrigir a redação.");
+      setError(err instanceof ApiError ? err.message : "Erro ao corrigir a redação.");
       setSubmitting(false);
     }
   }
