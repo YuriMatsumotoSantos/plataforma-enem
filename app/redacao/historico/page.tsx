@@ -89,7 +89,7 @@ function HistoricoContent() {
         <Pagination>
           <PaginationContent>
             <PaginationItem>
-              <PaginationPrevious href={`/redacao/historico?page=${Math.max(1, page - 1)}`} />
+              <PaginationPrevious href={`/redacao/historico?page=${Math.max(1, page - 1)}`} text="Anterior" />
             </PaginationItem>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
               <PaginationItem key={p}>
@@ -99,7 +99,7 @@ function HistoricoContent() {
               </PaginationItem>
             ))}
             <PaginationItem>
-              <PaginationNext href={`/redacao/historico?page=${Math.min(totalPages, page + 1)}`} />
+              <PaginationNext href={`/redacao/historico?page=${Math.min(totalPages, page + 1)}`} text="Próxima" />
             </PaginationItem>
           </PaginationContent>
         </Pagination>
