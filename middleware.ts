@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 
-// NOTE: getSessionCookie only checks that a session cookie is *present* —
+// NOTE: getSessionCookie only checks that a session cookie is *present*,
 // it does not validate the session (signature, expiry, revocation). This is
 // an outer, fail-fast defense layer only; full validation happens
 // server-side in each route (e.g. app/api/me/route.ts via auth.api.getSession).
