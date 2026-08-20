@@ -69,7 +69,7 @@ export async function gradeRedacao(
       },
     ],
     tool_choice: { type: "tool", name: "submit_grade" },
-  }, { timeout: 55_000 });
+  }, { timeout: 55_000, maxRetries: 0 });
 
   if (response.stop_reason === "max_tokens") {
     throw new Error("IA não retornou o schema esperado");
