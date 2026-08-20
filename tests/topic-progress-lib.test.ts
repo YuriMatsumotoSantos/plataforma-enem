@@ -6,6 +6,7 @@ import {
   applyProgressUpdate,
   getOrUpdateTopicProgress,
   getTopicsNeedingRecompute,
+  recomputeAllPending,
 } from "@/lib/topic-progress";
 
 function randomTestYear(): number {
@@ -63,6 +64,39 @@ async function recordAttempt(questionId: string, userId: string, isCorrect: bool
     selectedAnswer: isCorrect ? "A" : "B",
     isCorrect,
   });
+}
+
+async function createTopicWithQuestion() {
+  const [topic] = await db
+    .insert(topics)
+    .values({ id: crypto.randomUUID(), area: "matematica", subject: "Matemática", name: "Geometria" })
+    .returning();
+
+  const alternatives = [
+    { letter: "A", text: "1" },
+    { letter: "B", text: "2" },
+    { letter: "C", text: "3" },
+    { letter: "D", text: "4" },
+    { letter: "E", text: "5" },
+  ];
+
+  const [question] = await db
+    .insert(questions)
+    .values({
+      id: crypto.randomUUID(),
+      year: randomTestYear(),
+      examDay: 1,
+      questionNumber: 1,
+      area: "matematica",
+      statement: "teste",
+      alternatives,
+      correctAnswer: "A",
+      topicId: topic.id,
+      status: "aprovada",
+    })
+    .returning();
+
+  return { topic, question };
 }
 
 describe("getTopicsNeedingRecompute", () => {
@@ -199,5 +233,75 @@ describe("applyProgressUpdate (guarda de concorrência)", () => {
     const progressB = { ...progressA, reps: 3, lastReviewedAt: t2 };
     const secondUpdate = await applyProgressUpdate(existing.id, t0, progressB);
     expect(secondUpdate).toBeUndefined();
+  });
+});
+
+describe("recomputeAllPending", () => {
+  it("recalcula, em lote, um topic sem topic_progress e um topic com progresso existente", async () => {
+    const { topic: topicA, question: questionA } = await createTopicWithQuestion();
+    const { topic: topicB, question: questionB } = await createTopicWithQuestion();
+    const { topic: topicC, question: questionC } = await createTopicWithQuestion();
+    const [testUser] = await db
+      .insert(user)
+      .values({
+        id: crypto.randomUUID(),
+        name: "Aluno Teste",
+        email: `aluno-${crypto.randomUUID()}@example.com`,
+        emailVerified: false,
+      })
+      .returning();
+
+    // topicA: nunca revisado, ganha um topic_progress novo neste lote.
+    await recordAttempt(questionA.id, testUser.id, true);
+    await recordAttempt(questionA.id, testUser.id, true);
+
+    // topicB: já tem um topic_progress (criado fora do lote), recebe tentativas
+    // novas depois disso e deve ser atualizado (reps incrementado).
+    await recordAttempt(questionB.id, testUser.id, true);
+    const beforeB = await getOrUpdateTopicProgress(testUser.id, topicB.id);
+    expect(beforeB).not.toBeNull();
+    await recordAttempt(questionB.id, testUser.id, false);
+
+    // topicC: não tem nenhuma tentativa, não deve aparecer nem ser tocado.
+    void topicC;
+    void questionC;
+
+    await recomputeAllPending(testUser.id);
+
+    const [progressA] = await db
+      .select()
+      .from(topicProgress)
+      .where(and(eq(topicProgress.userId, testUser.id), eq(topicProgress.topicId, topicA.id)));
+    expect(progressA).toBeDefined();
+    expect(progressA!.reps).toBe(1);
+    expect(progressA!.dueAt.getTime()).toBeGreaterThan(Date.now());
+
+    const [progressB] = await db
+      .select()
+      .from(topicProgress)
+      .where(and(eq(topicProgress.userId, testUser.id), eq(topicProgress.topicId, topicB.id)));
+    expect(progressB).toBeDefined();
+    expect(progressB!.reps).toBe(beforeB!.reps + 1);
+    expect(progressB!.lastReviewedAt.getTime()).toBeGreaterThan(beforeB!.lastReviewedAt.getTime());
+
+    const [progressC] = await db
+      .select()
+      .from(topicProgress)
+      .where(and(eq(topicProgress.userId, testUser.id), eq(topicProgress.topicId, topicC.id)));
+    expect(progressC).toBeUndefined();
+  });
+
+  it("sem nenhum topic pendente, não faz nada e não lança erro", async () => {
+    const [testUser] = await db
+      .insert(user)
+      .values({
+        id: crypto.randomUUID(),
+        name: "Aluno Teste",
+        email: `aluno-${crypto.randomUUID()}@example.com`,
+        emailVerified: false,
+      })
+      .returning();
+
+    await expect(recomputeAllPending(testUser.id)).resolves.toBeUndefined();
   });
 });

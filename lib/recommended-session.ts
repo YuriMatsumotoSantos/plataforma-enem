@@ -4,6 +4,7 @@ import { questions, topicProgress, topics, type Alternative } from "@/db/schema"
 import { getTopicProgressRows, selectFracos, selectVencidos } from "@/lib/dashboard";
 
 const MAX_TOPICS = 5;
+const RECOMMENDED_POOL_SIZE = 20;
 
 export type CandidateTopic = {
   topicId: string;
@@ -98,7 +99,7 @@ export async function getRecommendedQuestionPool(topicIds: string[]): Promise<Pr
         ne(questions.correctAnswer, "Anulado")
       )
     );
-  return shuffle(rows);
+  return shuffle(rows).slice(0, RECOMMENDED_POOL_SIZE);
 }
 
 export async function getRecommendedSession(userId: string) {
@@ -106,7 +107,8 @@ export async function getRecommendedSession(userId: string) {
   const now = new Date();
   const vencidos = selectVencidos(rows, now);
   const fracos = selectFracos(rows);
-  const neverAttempted = shuffle(await getNeverAttemptedTopics(userId));
+  const needed = MAX_TOPICS - vencidos.length - fracos.length;
+  const neverAttempted = needed > 0 ? shuffle(await getNeverAttemptedTopics(userId)) : [];
 
   // Named selectedTopics/poolQuestions, not topics/questions, so they don't
   // shadow the schema table imports of the same name used above in this file.
