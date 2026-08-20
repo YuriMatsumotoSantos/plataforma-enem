@@ -43,6 +43,13 @@
       "when": 1787197696754,
       "tag": "0005_narrow_scourge",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787229197608,
+      "tag": "0006_majestic_masque",
+      "breakpoints": true
     }
   ]
 }
