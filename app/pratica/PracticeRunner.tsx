@@ -32,12 +32,16 @@ export function PracticeRunner({
   questionsUrl,
   backHref,
   backLabel,
+  summaryLabel,
   emptyMessage,
+  errorMessage,
 }: {
   questionsUrl: string;
   backHref: string;
   backLabel: string;
+  summaryLabel: string;
   emptyMessage: string;
+  errorMessage: string;
 }) {
   const router = useRouter();
 
@@ -60,7 +64,7 @@ export function PracticeRunner({
           return null;
         }
         if (!response.ok) {
-          throw new Error("Erro ao carregar questões. Tente novamente.");
+          throw new Error(errorMessage);
         }
         return response.json();
       })
@@ -74,7 +78,7 @@ export function PracticeRunner({
     return () => {
       cancelled = true;
     };
-  }, [questionsUrl, router]);
+  }, [questionsUrl, errorMessage, router]);
 
   async function handleAnswer(letter: string) {
     if (answeredLetter || !questions) return;
@@ -141,7 +145,7 @@ export function PracticeRunner({
         <h1 className="text-2xl font-semibold">
           Você acertou {score} de {questions.length}
         </h1>
-        <Button render={<Link href={backHref} />}>{backLabel}</Button>
+        <Button render={<Link href={backHref} />}>{summaryLabel}</Button>
       </main>
     );
   }

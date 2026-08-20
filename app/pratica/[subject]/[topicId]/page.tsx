@@ -13,7 +13,9 @@ export default function PraticaSessaoPage() {
       questionsUrl={`/api/practice/questions?topicId=${encodeURIComponent(topicId)}`}
       backHref={`/pratica/${encodeURIComponent(subject)}`}
       backLabel="Voltar aos assuntos"
+      summaryLabel="Voltar aos assuntos"
       emptyMessage="Nenhuma questão disponível ainda para este assunto."
+      errorMessage="Erro ao carregar questões. Tente novamente."
     />
   );
 }
