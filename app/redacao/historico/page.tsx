@@ -77,7 +77,12 @@ function HistoricoContent() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                   <p className="font-medium">{r.temaTitle}</p>
-                  <p className="text-sm text-muted-foreground">{r.notaTotal} / 1000</p>
+                  <div className="flex flex-col items-end gap-1">
+                    <p className="text-sm text-muted-foreground">{r.notaTotal} / 1000</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(r.createdAt).toLocaleDateString("pt-BR")}
+                    </p>
+                  </div>
                 </CardHeader>
               </Card>
             </Link>

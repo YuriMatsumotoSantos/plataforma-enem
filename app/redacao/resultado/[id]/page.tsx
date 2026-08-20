@@ -20,11 +20,11 @@ type RedacaoDetalhe = {
 };
 
 const COMPETENCIA_LABELS = [
-  "Competência 1 — Norma culta",
-  "Competência 2 — Compreensão do tema",
-  "Competência 3 — Argumentação",
-  "Competência 4 — Coesão e coerência",
-  "Competência 5 — Proposta de intervenção",
+  "Competência 1, Norma culta",
+  "Competência 2, Compreensão do tema",
+  "Competência 3, Argumentação",
+  "Competência 4, Coesão e coerência",
+  "Competência 5, Proposta de intervenção",
 ];
 
 export default function ResultadoRedacaoPage() {

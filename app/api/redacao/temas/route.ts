@@ -8,6 +8,9 @@ export async function GET(request: Request) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
   }
 
-  const rows = await db.select({ id: temas.id, title: temas.title }).from(temas);
+  const rows = await db
+    .select({ id: temas.id, title: temas.title })
+    .from(temas)
+    .orderBy(temas.createdAt);
   return Response.json({ temas: rows });
 }

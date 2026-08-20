@@ -8,6 +8,8 @@ const MIN_WORDS = 50;
 const MAX_CHARS = 3000;
 const PAGE_SIZE = 20;
 
+export const maxDuration = 60;
+
 export async function POST(request: Request) {
   const session = await requireUser(request);
   if (!session) {
@@ -78,7 +80,7 @@ function parsePage(value: string | null): number {
     return 1;
   }
   const parsed = Number(value);
-  return parsed >= 1 ? parsed : 1;
+  return Number.isSafeInteger(parsed) && parsed >= 1 ? parsed : 1;
 }
 
 export async function GET(request: Request) {

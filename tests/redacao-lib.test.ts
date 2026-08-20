@@ -76,6 +76,22 @@ describe("gradeRedacao", () => {
     );
   });
 
+  it("lança erro quando uma competência vem ausente/não numérica no tool_use", async () => {
+    mockClientWithToolInput({
+      competencia1: 200,
+      competencia2: 160,
+      // competencia3 ausente
+      competencia4: 200,
+      competencia5: 160,
+      justificativas: ["a", "b", "c", "d", "e"],
+      comentarioGeral: "Muito bom.",
+    });
+
+    await expect(gradeRedacao("Tema de teste", "Texto do aluno.")).rejects.toThrow(
+      "IA não retornou o schema esperado"
+    );
+  });
+
   it("preenche justificativas ausentes com string vazia em vez de quebrar", async () => {
     mockClientWithToolInput({
       competencia1: 0,

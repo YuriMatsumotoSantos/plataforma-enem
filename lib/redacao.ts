@@ -27,7 +27,7 @@ export async function gradeRedacao(
 
   const response = await client.messages.create({
     model: ANTHROPIC_MODEL,
-    max_tokens: 2048,
+    max_tokens: 8000,
     system: `Você é um corretor oficial de redações do ENEM. Avalie o texto do aluno segundo as 5 competências oficiais, com rigor e imparcialidade:\n${RUBRIC}`,
     messages: [
       {
@@ -69,7 +69,11 @@ export async function gradeRedacao(
       },
     ],
     tool_choice: { type: "tool", name: "submit_grade" },
-  });
+  }, { timeout: 55_000 });
+
+  if (response.stop_reason === "max_tokens") {
+    throw new Error("IA não retornou o schema esperado");
+  }
 
   const toolUse = response.content.find(
     (block): block is Extract<(typeof response.content)[number], { type: "tool_use" }> =>
@@ -81,6 +85,18 @@ export async function gradeRedacao(
   }
 
   const input = toolUse.input as Record<string, unknown>;
+
+  for (const key of [
+    "competencia1",
+    "competencia2",
+    "competencia3",
+    "competencia4",
+    "competencia5",
+  ] as const) {
+    if (typeof input[key] !== "number" || !Number.isFinite(input[key])) {
+      throw new Error("IA não retornou o schema esperado");
+    }
+  }
 
   const scores: RedacaoScores = {
     competencia1: clampScore(input.competencia1),

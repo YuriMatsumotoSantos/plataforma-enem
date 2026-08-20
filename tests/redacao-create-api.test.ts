@@ -53,6 +53,19 @@ describe("POST /api/redacao/redacoes", () => {
     expect(response.status).toBe(400);
   });
 
+  it("retorna 400 quando o texto passa de 3000 caracteres", async () => {
+    const cookie = await createUserCookie();
+    const tema = await createTema();
+    const tooLongText = Array.from({ length: 500 }, () => "palavra").join(" ");
+    const request = new Request("http://localhost:3000/api/redacao/redacoes", {
+      method: "POST",
+      headers: { cookie, "Content-Type": "application/json" },
+      body: JSON.stringify({ temaId: tema.id, text: tooLongText }),
+    });
+    const response = await POST(request);
+    expect(response.status).toBe(400);
+  });
+
   it("retorna 400 para temaId inexistente", async () => {
     const cookie = await createUserCookie();
     const request = new Request("http://localhost:3000/api/redacao/redacoes", {
