@@ -39,7 +39,7 @@ export function middleware(request: NextRequest) {
 
 // Deny-by-default: match every /api/* route, plus /admin/*, /pratica/*,
 // /simulados/*, and /redacao/* page routes. Only the exclusions inside
-// middleware() above (exact path checks) are automatic — a new protected
+// middleware() above (exact path checks) are automatic. A new protected
 // *route prefix* still needs its own opt-in entry added to the matcher
 // array below.
 export const config = {
