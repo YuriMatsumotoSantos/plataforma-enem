@@ -27,6 +27,7 @@ export function Header() {
 
       {isPending ? null : data?.user ? (
         <div className="flex items-center gap-3 text-sm">
+          <Button render={<Link href="/dashboard">Dashboard</Link>} variant="link" />
           <Button render={<Link href="/pratica">Praticar</Link>} variant="link" />
           <Button render={<Link href="/simulados">Simulados</Link>} variant="link" />
           <Button render={<Link href="/redacao">Redação</Link>} variant="link" />

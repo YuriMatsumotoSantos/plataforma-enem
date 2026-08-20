@@ -58,6 +58,17 @@ Pipeline de ingestão local (não roda no site em produção — só no seu comp
 
 Qualquer aluno logado (não precisa ser `admin`) acessa `/pratica`, escolhe uma
 matéria e um assunto, e responde questões aprovadas uma de cada vez, com
-feedback imediato. Cada tentativa é gravada na tabela `attempts` — hoje
-nenhuma tela lê esses dados, é preparação para o dashboard/recomendação
-adaptativa (subsistema futuro).
+feedback imediato. Cada tentativa é gravada na tabela `attempts`, lida pelo dashboard e pela
+sessão recomendada descritos abaixo.
+
+## Dashboard e recomendação adaptativa
+
+Qualquer aluno logado acessa `/dashboard` e vê os assuntos vencidos para
+revisão e os pontos fracos identificados, calculados a partir do histórico
+em `attempts` usando repetição espaçada (FSRS, biblioteca `ts-fsrs`) por
+assunto, não por questão individual. O card "Sessão recomendada" leva a
+`/pratica/recomendada`, uma sessão que intercala questões de até 5 assuntos
+(vencidos primeiro, depois os mais fracos, depois assuntos ainda não
+praticados) em vez de um assunto só por vez. Todo o recálculo do estado FSRS
+roda sob demanda, dentro da própria requisição do dashboard/sessão
+recomendada, sem job em background.
