@@ -56,7 +56,7 @@ describe("GET /api/redacao/redacoes", () => {
     const { redacao, tema } = await createGradedRedacao(userId);
 
     const otherUser = await createUserCookie();
-    await createGradedRedacao(otherUser.userId);
+    const { redacao: otherRedacao } = await createGradedRedacao(otherUser.userId);
 
     const request = new Request("http://localhost:3000/api/redacao/redacoes", {
       headers: { cookie },
@@ -68,7 +68,7 @@ describe("GET /api/redacao/redacoes", () => {
     const found = body.redacoes.find((r: { id: string }) => r.id === redacao.id);
     expect(found.temaTitle).toBe(tema.title);
     expect(
-      body.redacoes.every((r: { id: string }) => r.id !== otherUser.userId)
-    ).toBe(true);
+      body.redacoes.some((r: { id: string }) => r.id === otherRedacao.id)
+    ).toBe(false);
   });
 });
