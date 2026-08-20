@@ -48,3 +48,6 @@ scripts/ingest/downloads/
 
 # local Claude Code tooling (skills, dev-server launch config) - not project code
 .claude/
+
+# graphify knowledge-graph output - generated artifact, not project code
+graphify-out/
