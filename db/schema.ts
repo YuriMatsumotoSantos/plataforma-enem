@@ -9,6 +9,7 @@ import {
   jsonb,
   pgEnum,
   unique,
+  real,
 } from "drizzle-orm/pg-core";
 
 export const userRole = pgEnum("user_role", ["aluno", "admin"]);
@@ -189,6 +190,33 @@ export const attempts = pgTable(
 );
 
 export type Attempt = typeof attempts.$inferSelect;
+
+export const topicProgress = pgTable(
+  "topic_progress",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    topicId: text("topic_id")
+      .notNull()
+      .references(() => topics.id),
+    stability: real("stability").notNull(),
+    difficulty: real("difficulty").notNull(),
+    state: integer("state").notNull().default(0),
+    lapses: integer("lapses").notNull().default(0),
+    reps: integer("reps").notNull().default(0),
+    dueAt: timestamp("due_at").notNull(),
+    lastReviewedAt: timestamp("last_reviewed_at").notNull(),
+  },
+  (table) => [
+    unique("topic_progress_user_topic_unique").on(table.userId, table.topicId),
+    index("topic_progress_user_idx").on(table.userId),
+    index("topic_progress_due_idx").on(table.dueAt),
+  ]
+);
+
+export type TopicProgress = typeof topicProgress.$inferSelect;
 
 export const simuladoMode = pgEnum("simulado_mode", ["mesclado", "fiel"]);
 export const simuladoStatus = pgEnum("simulado_status", ["em_andamento", "finalizado"]);
