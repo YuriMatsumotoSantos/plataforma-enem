@@ -43,6 +43,28 @@ describe("POST /api/stripe/portal", () => {
     expect(response.status).toBe(400);
   });
 
+  it("retorna 502 quando getStripeClient lança (ex: chave ausente)", async () => {
+    const { userId, cookie } = await createUserAndCookie();
+    await db.insert(subscriptions).values({
+      id: crypto.randomUUID(),
+      userId,
+      stripeCustomerId: "cus_teste_portal_falha",
+      stripeSubscriptionId: `sub_${crypto.randomUUID()}`,
+      status: "active",
+      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    });
+    vi.mocked(getStripeClient).mockImplementation(() => {
+      throw new Error("STRIPE_SECRET_KEY não definida");
+    });
+
+    const request = new Request("http://localhost:3000/api/stripe/portal", {
+      method: "POST",
+      headers: { cookie },
+    });
+    const response = await POST(request);
+    expect(response.status).toBe(502);
+  });
+
   it("cria uma sessão de portal e retorna a url quando já existe assinatura", async () => {
     const { userId, cookie } = await createUserAndCookie();
     await db.insert(subscriptions).values({

@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import type Stripe from "stripe";
 import { requireUser } from "@/lib/session";
 import { getStripeClient } from "@/lib/stripe";
 import { db } from "@/lib/db";
@@ -20,11 +21,19 @@ export async function POST(request: Request) {
     return Response.json({ error: "Você ainda não tem uma assinatura" }, { status: 400 });
   }
 
-  const stripe = getStripeClient();
-  const portalSession = await stripe.billingPortal.sessions.create({
-    customer: existing.stripeCustomerId,
-    return_url: `${env.NEXT_PUBLIC_APP_URL}/planos`,
-  });
+  let portalSession: Stripe.BillingPortal.Session;
+  try {
+    const stripe = getStripeClient();
+    portalSession = await stripe.billingPortal.sessions.create({
+      customer: existing.stripeCustomerId,
+      return_url: `${env.NEXT_PUBLIC_APP_URL}/planos`,
+    });
+  } catch {
+    return Response.json(
+      { error: "Não foi possível abrir o portal de assinatura no momento. Tente novamente." },
+      { status: 502 }
+    );
+  }
 
   return Response.json({ url: portalSession.url });
 }

@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import type Stripe from "stripe";
 import { requireUser } from "@/lib/session";
 import { getStripeClient } from "@/lib/stripe";
 import { db } from "@/lib/db";
@@ -26,18 +27,26 @@ export async function POST(request: Request) {
     .from(subscriptions)
     .where(eq(subscriptions.userId, session.user.id));
 
-  const stripe = getStripeClient();
   const appUrl = env.NEXT_PUBLIC_APP_URL;
 
-  const checkoutSession = await stripe.checkout.sessions.create({
-    mode: "subscription",
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${appUrl}/planos?sucesso=1`,
-    cancel_url: `${appUrl}/planos`,
-    customer: existing?.stripeCustomerId,
-    customer_email: existing ? undefined : session.user.email,
-    subscription_data: { metadata: { userId: session.user.id } },
-  });
+  let checkoutSession: Stripe.Checkout.Session;
+  try {
+    const stripe = getStripeClient();
+    checkoutSession = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${appUrl}/planos?sucesso=1`,
+      cancel_url: `${appUrl}/planos`,
+      customer: existing?.stripeCustomerId,
+      customer_email: existing ? undefined : session.user.email,
+      subscription_data: { metadata: { userId: session.user.id } },
+    });
+  } catch {
+    return Response.json(
+      { error: "Não foi possível iniciar o checkout no momento. Tente novamente." },
+      { status: 502 }
+    );
+  }
 
   if (!checkoutSession.url) {
     return Response.json({ error: "Não foi possível iniciar o checkout" }, { status: 502 });

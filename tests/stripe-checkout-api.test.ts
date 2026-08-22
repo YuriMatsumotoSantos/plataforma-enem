@@ -73,6 +73,20 @@ describe("POST /api/stripe/checkout", () => {
     expect(response.status).toBe(400);
   });
 
+  it("retorna 502 quando getStripeClient lança (ex: chave ausente)", async () => {
+    const { cookie } = await createUserCookie();
+    vi.mocked(getStripeClient).mockImplementation(() => {
+      throw new Error("STRIPE_SECRET_KEY não definida");
+    });
+
+    const request = new Request("http://localhost:3000/api/stripe/checkout", {
+      method: "POST",
+      headers: { cookie },
+    });
+    const response = await POST(request);
+    expect(response.status).toBe(502);
+  });
+
   it("retorna 502 quando a Stripe não devolve uma url", async () => {
     const { cookie } = await createUserCookie();
     vi.mocked(getStripeClient).mockReturnValue({
