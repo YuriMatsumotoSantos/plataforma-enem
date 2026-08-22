@@ -16,31 +16,39 @@ function toSubscriptionStatus(status: string): SubscriptionStatus {
 async function upsertSubscription(sub: Stripe.Subscription) {
   const currentPeriodEnd = new Date(sub.items.data[0].current_period_end * 1000);
   const status = toSubscriptionStatus(sub.status);
+  const userId = sub.metadata?.userId;
+  const stripeCustomerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
 
-  const [existing] = await db
-    .select({ id: subscriptions.id })
-    .from(subscriptions)
-    .where(eq(subscriptions.stripeSubscriptionId, sub.id));
-
-  if (existing) {
+  if (userId) {
+    // Identidade é o userId (subscriptions.userId é UNIQUE — um plano por
+    // usuário). Um novo stripeSubscriptionId (ex: reassinatura após cancelar)
+    // substitui a linha existente do usuário em vez de tentar inserir uma
+    // segunda linha e violar a constraint.
     await db
-      .update(subscriptions)
-      .set({ status, currentPeriodEnd })
-      .where(eq(subscriptions.stripeSubscriptionId, sub.id));
+      .insert(subscriptions)
+      .values({
+        id: crypto.randomUUID(),
+        userId,
+        stripeCustomerId,
+        stripeSubscriptionId: sub.id,
+        status,
+        currentPeriodEnd,
+      })
+      .onConflictDoUpdate({
+        target: subscriptions.userId,
+        set: { stripeCustomerId, stripeSubscriptionId: sub.id, status, currentPeriodEnd },
+      });
     return;
   }
 
-  const userId = sub.metadata?.userId;
-  if (!userId) return;
-
-  await db.insert(subscriptions).values({
-    id: crypto.randomUUID(),
-    userId,
-    stripeCustomerId: typeof sub.customer === "string" ? sub.customer : sub.customer.id,
-    stripeSubscriptionId: sub.id,
-    status,
-    currentPeriodEnd,
-  });
+  // Sem metadata.userId (ex: evento updated/deleted posterior de uma
+  // assinatura cuja linha já foi criada pelo evento created). Atualiza pela
+  // stripeSubscriptionId; se não houver linha correspondente, não há o que
+  // atualizar.
+  await db
+    .update(subscriptions)
+    .set({ status, currentPeriodEnd })
+    .where(eq(subscriptions.stripeSubscriptionId, sub.id));
 }
 
 export async function POST(request: Request) {

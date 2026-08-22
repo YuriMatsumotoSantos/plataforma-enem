@@ -128,6 +128,46 @@ describe("POST /api/stripe/webhook", () => {
     expect(rows[0].status).toBe("past_due");
   });
 
+  it("reassinatura com novo stripeSubscriptionId atualiza a mesma linha do usuário", async () => {
+    const testUser = await createTestUser();
+    const firstSubscriptionId = `sub_${crypto.randomUUID()}`;
+    const createdPayload = JSON.stringify(
+      buildSubscriptionEvent("customer.subscription.created", {
+        id: firstSubscriptionId,
+        status: "active",
+        customer: "cus_teste_webhook",
+        metadata: { userId: testUser.id },
+      })
+    );
+    await postWebhook(createdPayload, sign(createdPayload));
+
+    const deletedPayload = JSON.stringify(
+      buildSubscriptionEvent("customer.subscription.deleted", {
+        id: firstSubscriptionId,
+        status: "canceled",
+        customer: "cus_teste_webhook",
+      })
+    );
+    await postWebhook(deletedPayload, sign(deletedPayload));
+
+    const secondSubscriptionId = `sub_${crypto.randomUUID()}`;
+    const resubscribePayload = JSON.stringify(
+      buildSubscriptionEvent("customer.subscription.created", {
+        id: secondSubscriptionId,
+        status: "active",
+        customer: "cus_teste_webhook",
+        metadata: { userId: testUser.id },
+      })
+    );
+    const response = await postWebhook(resubscribePayload, sign(resubscribePayload));
+    expect(response.status).toBe(200);
+
+    const rows = await db.select().from(subscriptions).where(eq(subscriptions.userId, testUser.id));
+    expect(rows).toHaveLength(1);
+    expect(rows[0].stripeSubscriptionId).toBe(secondSubscriptionId);
+    expect(rows[0].status).toBe("active");
+  });
+
   it("marca como canceled em customer.subscription.deleted", async () => {
     const testUser = await createTestUser();
     const subscriptionId = `sub_${crypto.randomUUID()}`;
