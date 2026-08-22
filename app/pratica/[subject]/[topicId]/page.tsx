@@ -42,6 +42,7 @@ export default function PraticaSessaoPage() {
     null
   );
   const [attemptError, setAttemptError] = useState<string | null>(null);
+  const [limitReached, setLimitReached] = useState(false);
   const [score, setScore] = useState(0);
 
   useEffect(() => {
@@ -73,6 +74,7 @@ export default function PraticaSessaoPage() {
     if (answeredLetter || !questions) return;
     setAnsweredLetter(letter);
     setAttemptError(null);
+    setLimitReached(false);
 
     try {
       const response = await fetch("/api/practice/attempts", {
@@ -86,6 +88,13 @@ export default function PraticaSessaoPage() {
 
       if (response.status === 401) {
         router.push("/entrar");
+        return;
+      }
+
+      if (response.status === 402) {
+        const data = await response.json().catch(() => null);
+        setAttemptError(data?.error ?? "Limite do plano grátis atingido.");
+        setLimitReached(true);
         return;
       }
 
@@ -160,6 +169,11 @@ export default function PraticaSessaoPage() {
       </div>
 
       {attemptError && <p className="text-sm text-destructive">{attemptError}</p>}
+      {limitReached && (
+        <Link href="/planos" className="text-sm underline">
+          Ver planos
+        </Link>
+      )}
 
       <Card>
         <CardHeader>

@@ -33,6 +33,7 @@ export default function SimuladosPage() {
   const [mesclado, setMesclado] = useState<MescladoOption[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [limitReached, setLimitReached] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,6 +68,7 @@ export default function SimuladosPage() {
   }) {
     setCreating(true);
     setError(null);
+    setLimitReached(false);
     try {
       const response = await fetch("/api/simulados", {
         method: "POST",
@@ -75,6 +77,12 @@ export default function SimuladosPage() {
       });
       if (response.status === 401) {
         router.push("/entrar");
+        return;
+      }
+      if (response.status === 402) {
+        const data = await response.json().catch(() => null);
+        setError(data?.error ?? "Limite do plano grátis atingido.");
+        setLimitReached(true);
         return;
       }
       if (!response.ok) {
@@ -101,6 +109,11 @@ export default function SimuladosPage() {
       </div>
 
       {error && <p className="text-destructive">{error}</p>}
+      {limitReached && (
+        <Link href="/planos" className="text-sm underline">
+          Ver planos
+        </Link>
+      )}
       {!fiel && !mesclado && !error && <p>Carregando...</p>}
 
       {mesclado && (

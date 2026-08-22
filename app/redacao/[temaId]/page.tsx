@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
@@ -22,6 +23,7 @@ export default function EscreverRedacaoPage() {
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [limitReached, setLimitReached] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -52,12 +54,18 @@ export default function EscreverRedacaoPage() {
   async function handleSubmit() {
     setSubmitting(true);
     setError(null);
+    setLimitReached(false);
     try {
       const response = await fetch("/api/redacao/redacoes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ temaId: params.temaId, text }),
       });
+      if (response.status === 402) {
+        const body = await response.json().catch(() => ({ error: "Limite do plano grátis atingido." }));
+        setLimitReached(true);
+        throw new ApiError(body.error ?? "Limite do plano grátis atingido.");
+      }
       if (!response.ok) {
         const body = await response.json().catch(() => ({ error: "Erro ao corrigir a redação." }));
         throw new ApiError(body.error ?? "Erro ao corrigir a redação.");
@@ -92,6 +100,11 @@ export default function EscreverRedacaoPage() {
       </div>
 
       {error && <p className="text-destructive">{error}</p>}
+      {limitReached && (
+        <Link href="/planos" className="text-sm underline">
+          Ver planos
+        </Link>
+      )}
 
       <Button type="button" onClick={handleSubmit} disabled={!canSubmit}>
         {submitting ? "Corrigindo... isso pode levar alguns segundos" : "Enviar para correção"}
