@@ -2,11 +2,22 @@ import { and, eq, ne } from "drizzle-orm";
 import { requireUser } from "@/lib/session";
 import { db } from "@/lib/db";
 import { attempts, questions } from "@/db/schema";
+import { canPracticeToday } from "@/lib/entitlements";
 
 export async function POST(request: Request) {
   const session = await requireUser(request);
   if (!session) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
+  }
+
+  if (!(await canPracticeToday(session.user.id))) {
+    return Response.json(
+      {
+        error:
+          "Limite diário de questões do plano grátis atingido. Assine o Premium para praticar sem limite.",
+      },
+      { status: 402 }
+    );
   }
 
   let body: unknown;

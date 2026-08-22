@@ -128,4 +128,27 @@ describe("POST /api/practice/attempts", () => {
     expect(saved).toHaveLength(2);
     expect(saved.map((a) => a.isCorrect).sort()).toEqual([false, true]);
   });
+
+  it("retorna 402 ao atingir o limite diário do plano grátis", async () => {
+    const question = await createApprovedQuestion();
+    const { cookie, userId } = await createUserCookie();
+
+    for (let i = 0; i < 20; i++) {
+      await db.insert(attempts).values({
+        id: crypto.randomUUID(),
+        questionId: question.id,
+        userId,
+        selectedAnswer: "A",
+        isCorrect: true,
+      });
+    }
+
+    const request = new Request("http://localhost:3000/api/practice/attempts", {
+      method: "POST",
+      headers: { cookie, "Content-Type": "application/json" },
+      body: JSON.stringify({ questionId: question.id, selectedAnswer: "A" }),
+    });
+    const response = await POST(request);
+    expect(response.status).toBe(402);
+  });
 });
