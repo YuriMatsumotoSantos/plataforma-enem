@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/session";
 import { getStripeClient } from "@/lib/stripe";
 import { db } from "@/lib/db";
 import { subscriptions } from "@/db/schema";
+import { env } from "@/lib/env";
 
 export async function POST(request: Request) {
   const session = await requireUser(request);
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
     .where(eq(subscriptions.userId, session.user.id));
 
   const stripe = getStripeClient();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  const appUrl = env.NEXT_PUBLIC_APP_URL;
 
   const checkoutSession = await stripe.checkout.sessions.create({
     mode: "subscription",
