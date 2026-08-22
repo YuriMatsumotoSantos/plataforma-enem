@@ -123,4 +123,30 @@ describe("POST /api/redacao/redacoes", () => {
     const saved = await db.select().from(redacoes).where(eq(redacoes.temaId, tema.id));
     expect(saved).toHaveLength(0);
   });
+
+  it("retorna 402 ao atingir o limite mensal de correções no plano grátis", async () => {
+    const cookie = await createUserCookie();
+    const tema = await createTema();
+
+    // primeira correção consome a cota grátis de 1/mês
+    vi.mocked(gradeRedacao).mockResolvedValue({
+      scores: { competencia1: 0, competencia2: 0, competencia3: 0, competencia4: 0, competencia5: 0 },
+      notaTotal: 0,
+      feedback: { justificativas: ["", "", "", "", ""], comentarioGeral: "" },
+    });
+    const first = new Request("http://localhost:3000/api/redacao/redacoes", {
+      method: "POST",
+      headers: { cookie, "Content-Type": "application/json" },
+      body: JSON.stringify({ temaId: tema.id, text: LONG_ENOUGH_TEXT }),
+    });
+    await POST(first);
+
+    const second = new Request("http://localhost:3000/api/redacao/redacoes", {
+      method: "POST",
+      headers: { cookie, "Content-Type": "application/json" },
+      body: JSON.stringify({ temaId: tema.id, text: LONG_ENOUGH_TEXT }),
+    });
+    const response = await POST(second);
+    expect(response.status).toBe(402);
+  });
 });

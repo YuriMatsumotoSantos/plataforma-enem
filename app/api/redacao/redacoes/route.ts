@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/session";
 import { db } from "@/lib/db";
 import { redacoes, temas } from "@/db/schema";
 import { gradeRedacao } from "@/lib/redacao";
+import { canSubmitRedacao } from "@/lib/entitlements";
 
 const MIN_WORDS = 50;
 const MAX_CHARS = 3000;
@@ -14,6 +15,13 @@ export async function POST(request: Request) {
   const session = await requireUser(request);
   if (!session) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
+  }
+
+  if (!(await canSubmitRedacao(session.user.id))) {
+    return Response.json(
+      { error: "Limite de correções do mês atingido. Assine o Premium para mais correções." },
+      { status: 402 }
+    );
   }
 
   let body: unknown;
