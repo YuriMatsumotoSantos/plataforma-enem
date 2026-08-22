@@ -124,6 +124,38 @@ describe("POST /api/redacao/redacoes", () => {
     expect(saved).toHaveLength(0);
   });
 
+  it("duas requisições concorrentes do mesmo usuário: só uma passa (evita dupla chamada paga à IA)", async () => {
+    const cookie = await createUserCookie();
+    const tema = await createTema();
+
+    vi.mocked(gradeRedacao).mockImplementation(async () => {
+      // Simula a IA como uma chamada com custo real e alguma latência, para
+      // dar tempo das duas requisições concorrentes realmente se
+      // sobreporem antes de qualquer uma terminar.
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      return {
+        scores: { competencia1: 0, competencia2: 0, competencia3: 0, competencia4: 0, competencia5: 0 },
+        notaTotal: 0,
+        feedback: { justificativas: ["", "", "", "", ""], comentarioGeral: "" },
+      };
+    });
+
+    function makeRequest() {
+      return new Request("http://localhost:3000/api/redacao/redacoes", {
+        method: "POST",
+        headers: { cookie, "Content-Type": "application/json" },
+        body: JSON.stringify({ temaId: tema.id, text: LONG_ENOUGH_TEXT }),
+      });
+    }
+
+    const [first, second] = await Promise.all([POST(makeRequest()), POST(makeRequest())]);
+    const statuses = [first.status, second.status].sort();
+    expect(statuses).toEqual([200, 402]);
+
+    const saved = await db.select().from(redacoes).where(eq(redacoes.temaId, tema.id));
+    expect(saved).toHaveLength(1);
+  });
+
   it("retorna 402 ao atingir o limite mensal de correções no plano grátis", async () => {
     const cookie = await createUserCookie();
     const tema = await createTema();

@@ -1,4 +1,4 @@
-import { count, desc, eq } from "drizzle-orm";
+import { count, desc, eq, sql } from "drizzle-orm";
 import { requireUser } from "@/lib/session";
 import { db } from "@/lib/db";
 import { redacoes, temas } from "@/db/schema";
@@ -15,13 +15,6 @@ export async function POST(request: Request) {
   const session = await requireUser(request);
   if (!session) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
-  }
-
-  if (!(await canSubmitRedacao(session.user.id))) {
-    return Response.json(
-      { error: "Limite de correções do mês atingido. Assine o Premium para mais correções." },
-      { status: 402 }
-    );
   }
 
   let body: unknown;
@@ -60,25 +53,49 @@ export async function POST(request: Request) {
     return Response.json({ error: "Tema não encontrado" }, { status: 400 });
   }
 
-  let graded: Awaited<ReturnType<typeof gradeRedacao>>;
+  // Gate check + chamada à IA + insert precisam ficar atômicos por usuário:
+  // sem isso, duas requisições concorrentes (duplo clique, duas abas) podem
+  // passar no check com a mesma contagem e disparar duas chamadas pagas à
+  // IA antes que qualquer uma grave sua redação. Um advisory lock por
+  // usuário serializa: a segunda requisição só roda o check depois que a
+  // primeira já terminou sua transação (commit ou rollback).
+  let limitReached = false;
+  let saved: typeof redacoes.$inferSelect | undefined;
+
   try {
-    graded = await gradeRedacao(tema.title, text);
+    await db.transaction(async (tx) => {
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${session.user.id}))`);
+
+      if (!(await canSubmitRedacao(session.user.id, tx))) {
+        limitReached = true;
+        return;
+      }
+
+      const graded = await gradeRedacao(tema.title, text);
+
+      [saved] = await tx
+        .insert(redacoes)
+        .values({
+          id: crypto.randomUUID(),
+          userId: session.user.id,
+          temaId: tema.id,
+          text,
+          scores: graded.scores,
+          notaTotal: graded.notaTotal,
+          feedback: graded.feedback,
+        })
+        .returning();
+    });
   } catch {
     return Response.json({ error: "Falha ao corrigir a redação. Tente novamente." }, { status: 502 });
   }
 
-  const [saved] = await db
-    .insert(redacoes)
-    .values({
-      id: crypto.randomUUID(),
-      userId: session.user.id,
-      temaId: tema.id,
-      text,
-      scores: graded.scores,
-      notaTotal: graded.notaTotal,
-      feedback: graded.feedback,
-    })
-    .returning();
+  if (limitReached) {
+    return Response.json(
+      { error: "Limite de correções do mês atingido. Assine o Premium para mais correções." },
+      { status: 402 }
+    );
+  }
 
   return Response.json(saved);
 }

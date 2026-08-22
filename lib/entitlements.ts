@@ -1,5 +1,5 @@
 import { and, eq, gte, count } from "drizzle-orm";
-import { db } from "@/lib/db";
+import { db, type Database } from "@/lib/db";
 import { subscriptions, attempts, simulados, redacoes } from "@/db/schema";
 
 export type Plan = "free" | "premium";
@@ -54,11 +54,20 @@ export async function canStartSimulado(userId: string): Promise<boolean> {
   return value < FREE_SIMULADO_LIMIT;
 }
 
-export async function canSubmitRedacao(userId: string): Promise<boolean> {
+// dbClient aceita tanto o db do módulo quanto uma transação (o retorno de
+// db.transaction((tx) => ...) não tem a propriedade $client de Database, daí
+// o Omit) — permite passar a mesma tx que segura o advisory lock em
+// app/api/redacao/redacoes/route.ts, para que a contagem enxergue
+// exatamente o estado daquela transação. Chamadas fora de uma transação
+// (practice/simulados) continuam usando o db do módulo.
+export async function canSubmitRedacao(
+  userId: string,
+  dbClient: Omit<Database, "$client"> = db
+): Promise<boolean> {
   const plan = await getUserPlan(userId);
   const limit = plan === "premium" ? PREMIUM_REDACAO_MONTHLY_LIMIT : FREE_REDACAO_MONTHLY_LIMIT;
 
-  const [{ value }] = await db
+  const [{ value }] = await dbClient
     .select({ value: count() })
     .from(redacoes)
     .where(and(eq(redacoes.userId, userId), gte(redacoes.createdAt, startOfMonth())));
