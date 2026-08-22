@@ -43,6 +43,13 @@
       "when": 1787197696754,
       "tag": "0005_narrow_scourge",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787381231338,
+      "tag": "0006_clumsy_veda",
+      "breakpoints": true
     }
   ]
 }

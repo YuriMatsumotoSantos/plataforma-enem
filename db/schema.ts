@@ -270,3 +270,34 @@ export const redacoes = pgTable(
 );
 
 export type Redacao = typeof redacoes.$inferSelect;
+
+export const subscriptionStatus = pgEnum("subscription_status", [
+  "trialing",
+  "active",
+  "past_due",
+  "canceled",
+  "incomplete",
+]);
+
+export const subscriptions = pgTable(
+  "subscriptions",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .unique()
+      .references(() => user.id, { onDelete: "cascade" }),
+    stripeCustomerId: text("stripe_customer_id").notNull(),
+    stripeSubscriptionId: text("stripe_subscription_id").notNull().unique(),
+    status: subscriptionStatus("status").notNull(),
+    currentPeriodEnd: timestamp("current_period_end").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [index("subscriptions_userId_idx").on(table.userId)]
+);
+
+export type Subscription = typeof subscriptions.$inferSelect;
