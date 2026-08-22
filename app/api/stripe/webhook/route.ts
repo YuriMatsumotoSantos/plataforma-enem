@@ -13,7 +13,15 @@ function toSubscriptionStatus(status: string): SubscriptionStatus {
     : "incomplete";
 }
 
-async function upsertSubscription(sub: Stripe.Subscription) {
+async function upsertSubscription(sub: Stripe.Subscription, eventId: string) {
+  if (sub.items.data.length === 0) {
+    console.error("Webhook: subscription sem items.data, evento ignorado", {
+      eventId,
+      subscriptionId: sub.id,
+    });
+    return;
+  }
+
   const currentPeriodEnd = new Date(sub.items.data[0].current_period_end * 1000);
   const status = toSubscriptionStatus(sub.status);
   const userId = sub.metadata?.userId;
@@ -45,10 +53,18 @@ async function upsertSubscription(sub: Stripe.Subscription) {
   // assinatura cuja linha já foi criada pelo evento created). Atualiza pela
   // stripeSubscriptionId; se não houver linha correspondente, não há o que
   // atualizar.
-  await db
+  const updated = await db
     .update(subscriptions)
     .set({ status, currentPeriodEnd })
-    .where(eq(subscriptions.stripeSubscriptionId, sub.id));
+    .where(eq(subscriptions.stripeSubscriptionId, sub.id))
+    .returning({ id: subscriptions.id });
+
+  if (updated.length === 0) {
+    console.error("Webhook: sem metadata.userId e sem linha existente para atualizar", {
+      eventId,
+      subscriptionId: sub.id,
+    });
+  }
 }
 
 export async function POST(request: Request) {
@@ -73,7 +89,7 @@ export async function POST(request: Request) {
     event.type === "customer.subscription.created" ||
     event.type === "customer.subscription.updated"
   ) {
-    await upsertSubscription(event.data.object as Stripe.Subscription);
+    await upsertSubscription(event.data.object as Stripe.Subscription, event.id);
   } else if (event.type === "customer.subscription.deleted") {
     const sub = event.data.object as Stripe.Subscription;
     await db
