@@ -105,6 +105,26 @@ describe("POST /api/simulados", () => {
     expect(saved.durationSeconds).toBe(19800);
     expect(saved.status).toBe("em_andamento");
   });
+
+  it("retorna 402 ao tentar iniciar um segundo simulado no plano grátis", async () => {
+    const { cookie, userId } = await createUserCookie();
+    await db.insert(simulados).values({
+      id: crypto.randomUUID(),
+      userId,
+      mode: "mesclado",
+      examDay: 1,
+      questionIds: [],
+      durationSeconds: 100,
+    });
+
+    const request = new Request("http://localhost:3000/api/simulados", {
+      method: "POST",
+      headers: { cookie, "Content-Type": "application/json" },
+      body: JSON.stringify({ mode: "mesclado", examDay: 1 }),
+    });
+    const response = await POST(request);
+    expect(response.status).toBe(402);
+  });
 });
 
 describe("GET /api/simulados", () => {

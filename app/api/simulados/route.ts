@@ -2,6 +2,7 @@ import { desc, eq, inArray } from "drizzle-orm";
 import { requireUser } from "@/lib/session";
 import { db } from "@/lib/db";
 import { questions, simulados } from "@/db/schema";
+import { canStartSimulado } from "@/lib/entitlements";
 import {
   DAY_DURATIONS,
   computeOverallScore,
@@ -18,6 +19,15 @@ export async function POST(request: Request) {
   const session = await requireUser(request);
   if (!session) {
     return Response.json({ error: "Não autenticado" }, { status: 401 });
+  }
+
+  if (!(await canStartSimulado(session.user.id))) {
+    return Response.json(
+      {
+        error: "Limite de simulados do plano grátis atingido. Assine o Premium para simulados sem limite.",
+      },
+      { status: 402 }
+    );
   }
 
   let body: unknown;
