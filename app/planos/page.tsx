@@ -18,6 +18,7 @@ function PlanosContent() {
     fetch("/api/me")
       .then((response) => (response.ok ? response.json() : null))
       .then((body) => setPlan(body?.plan ?? null))
+      .catch(() => setPlan(null))
       .finally(() => setLoadingPlan(false));
   }, []);
 
