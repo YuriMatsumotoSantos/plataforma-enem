@@ -61,3 +61,26 @@ matéria e um assunto, e responde questões aprovadas uma de cada vez, com
 feedback imediato. Cada tentativa é gravada na tabela `attempts` — hoje
 nenhuma tela lê esses dados, é preparação para o dashboard/recomendação
 adaptativa (subsistema futuro).
+
+## Monetização (planos)
+
+Todo aluno começa no plano Grátis: 20 questões de prática por dia, 1 simulado, 1
+correção de redação por mês. O plano Premium (R$ 29,90/mês, via Stripe) remove os
+dois primeiros limites e eleva o de redação para 20/mês. `/planos` mostra os dois
+planos e o botão de assinar/gerenciar.
+
+Para testar o fluxo de pagamento localmente:
+
+1. Crie uma conta de teste na Stripe (dashboard.stripe.com) e fique em modo teste.
+2. Crie um Product + Price recorrente mensal, copie o ID do Price.
+3. Configure no `.env.local`: `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID_PREMIUM` (o ID
+   copiado acima).
+4. Rode `stripe listen --forward-to localhost:3000/api/stripe/webhook` (Stripe CLI)
+   — ele imprime um `whsec_...` de teste; coloque em `STRIPE_WEBHOOK_SECRET` no
+   `.env.local`.
+5. `npm run dev`, vá em `/planos`, clique em "Assinar", use o cartão de teste da
+   própria Stripe `4242 4242 4242 4242` (qualquer data futura e CVC).
+
+Em produção, os mesmos três valores (em modo live, não teste) vão nas variáveis de
+ambiente do Vercel, e o endpoint de webhook é registrado no dashboard da Stripe
+apontando para `https://plataforma-enem-rose.vercel.app/api/stripe/webhook`.
