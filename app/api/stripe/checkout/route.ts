@@ -4,6 +4,7 @@ import { getStripeClient } from "@/lib/stripe";
 import { db } from "@/lib/db";
 import { subscriptions } from "@/db/schema";
 import { env } from "@/lib/env";
+import { getUserPlan } from "@/lib/entitlements";
 
 export async function POST(request: Request) {
   const session = await requireUser(request);
@@ -14,6 +15,10 @@ export async function POST(request: Request) {
   const priceId = process.env.STRIPE_PRICE_ID_PREMIUM;
   if (!priceId) {
     return Response.json({ error: "Checkout indisponível no momento" }, { status: 500 });
+  }
+
+  if ((await getUserPlan(session.user.id)) === "premium") {
+    return Response.json({ error: "Você já tem uma assinatura ativa" }, { status: 400 });
   }
 
   const [existing] = await db
