@@ -115,6 +115,7 @@ export default function PraticaSessaoPage() {
     setAnsweredLetter(null);
     setFeedback(null);
     setAttemptError(null);
+    setLimitReached(false);
     setCurrentIndex((prev) => prev + 1);
   }
 
