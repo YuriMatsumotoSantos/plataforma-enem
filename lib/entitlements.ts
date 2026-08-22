@@ -19,8 +19,11 @@ function startOfMonth(): Date {
   return new Date(now.getFullYear(), now.getMonth(), 1);
 }
 
-export async function getUserPlan(userId: string): Promise<Plan> {
-  const [row] = await db
+export async function getUserPlan(
+  userId: string,
+  dbClient: Omit<Database, "$client"> = db
+): Promise<Plan> {
+  const [row] = await dbClient
     .select({ status: subscriptions.status, currentPeriodEnd: subscriptions.currentPeriodEnd })
     .from(subscriptions)
     .where(eq(subscriptions.userId, userId));
@@ -64,7 +67,7 @@ export async function canSubmitRedacao(
   userId: string,
   dbClient: Omit<Database, "$client"> = db
 ): Promise<boolean> {
-  const plan = await getUserPlan(userId);
+  const plan = await getUserPlan(userId, dbClient);
   const limit = plan === "premium" ? PREMIUM_REDACAO_MONTHLY_LIMIT : FREE_REDACAO_MONTHLY_LIMIT;
 
   const [{ value }] = await dbClient
