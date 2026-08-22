@@ -246,7 +246,6 @@ describe("canSubmitRedacao", () => {
       await insertRedacao(testUser.id, tema.id, new Date());
     }
     expect(await canSubmitRedacao(testUser.id)).toBe(false);
-    expect(await canSubmitRedacao(testUser.id)).not.toBeUndefined();
   });
 
   it("premium com 19 correções no mês ainda pode enviar mais uma", async () => {
