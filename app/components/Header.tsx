@@ -48,9 +48,12 @@ export function Header() {
           <Button render={<Link href="/simulados">Simulados</Link>} variant="link" />
           <Button render={<Link href="/redacao">Redação</Link>} variant="link" />
           {displayedPlan === "premium" ? (
-            <span className="rounded bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground">
+            <Link
+              href="/planos"
+              className="rounded bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground"
+            >
               Premium
-            </span>
+            </Link>
           ) : (
             <Button render={<Link href="/planos">Planos</Link>} variant="link" />
           )}
