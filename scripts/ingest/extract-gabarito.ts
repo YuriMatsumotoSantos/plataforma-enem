@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { getGeminiClient, GEMINI_MODEL } from "@/lib/gemini";
+import { withHeartbeat } from "./heartbeat";
 import type { ExtractedQuestion, GabaritoEntry } from "./types";
 
 const RESPONSE_SCHEMA = {
@@ -29,22 +30,25 @@ export async function extractGabaritoFromPdf(
   const fileBuffer = await readFile(pdfPath);
   const base64Data = fileBuffer.toString("base64");
 
-  const response = await getGeminiClient().models.generateContent({
-    model: GEMINI_MODEL,
-    contents: [
-      {
-        role: "user",
-        parts: [
-          { inlineData: { mimeType: "application/pdf", data: base64Data } },
-          { text: PROMPT },
-        ],
+  const response = await withHeartbeat(
+    "extração do gabarito",
+    getGeminiClient().models.generateContent({
+      model: GEMINI_MODEL,
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { inlineData: { mimeType: "application/pdf", data: base64Data } },
+            { text: PROMPT },
+          ],
+        },
+      ],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: RESPONSE_SCHEMA,
       },
-    ],
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: RESPONSE_SCHEMA,
-    },
-  });
+    })
+  );
 
   const text = response.text;
   if (!text) {

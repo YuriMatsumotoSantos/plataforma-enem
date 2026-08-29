@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { getGeminiClient, GEMINI_MODEL } from "@/lib/gemini";
+import { withHeartbeat } from "./heartbeat";
 import type { ExtractedQuestion } from "./types";
 
 const RESPONSE_SCHEMA = {
@@ -60,6 +61,15 @@ natureza ou matematica), a disciplina específica (subject, ex: "Física",
 "História", "Língua Portuguesa") e o assunto específico dentro da disciplina
 (topic, ex: "Óptica — Lentes", "Revolução Industrial").
 
+IMPORTANTE — textos de apoio compartilhados: é muito comum no ENEM um único
+texto-base (uma crônica, tirinha, gráfico, trecho de reportagem etc.) servir de
+apoio para várias questões seguidas (ex.: um texto acima das questões 6 a 10).
+Cada questão precisa ser autossuficiente: se uma questão depende de um texto de
+apoio que não é exclusivo dela, copie o texto de apoio INTEIRO para dentro do
+campo "statement" dessa questão, antes da pergunta específica — mesmo que isso
+signifique repetir o mesmo texto de apoio em várias questões consecutivas. Nunca
+deixe uma questão cujo enunciado só faça sentido junto de outra.
+
 Não invente conteúdo: se não conseguir ler uma questão com confiança, ainda
 assim inclua o que conseguir extrair com a maior fidelidade possível ao
 enunciado original.`;
@@ -71,22 +81,25 @@ export async function extractQuestionsFromPdf(
   const fileBuffer = await readFile(pdfPath);
   const base64Data = fileBuffer.toString("base64");
 
-  const response = await getGeminiClient().models.generateContent({
-    model: GEMINI_MODEL,
-    contents: [
-      {
-        role: "user",
-        parts: [
-          { inlineData: { mimeType: "application/pdf", data: base64Data } },
-          { text: `${PROMPT}\n\nEste é o caderno do dia ${examDay} do ENEM.` },
-        ],
+  const response = await withHeartbeat(
+    `extração de questões do dia ${examDay}`,
+    getGeminiClient().models.generateContent({
+      model: GEMINI_MODEL,
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { inlineData: { mimeType: "application/pdf", data: base64Data } },
+            { text: `${PROMPT}\n\nEste é o caderno do dia ${examDay} do ENEM.` },
+          ],
+        },
+      ],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: RESPONSE_SCHEMA,
       },
-    ],
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: RESPONSE_SCHEMA,
-    },
-  });
+    })
+  );
 
   const text = response.text;
   if (!text) {
