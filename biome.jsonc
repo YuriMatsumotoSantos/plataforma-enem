@@ -1,0 +1,68 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.5.11/schema.json",
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": true
+	},
+	"files": {
+		"ignoreUnknown": false
+	},
+	// Desligado de propósito: esta base de código é anterior à adoção do
+	// Biome e nunca passou por um formatter automático. Ligar agora geraria
+	// uma parede de diffs só de formatação (tabs/aspas/quebra de linha) em
+	// quase todo arquivo, sem nenhuma relação com bug real, o que enterraria
+	// qualquer revisão de verdade nos próximos PRs. Reavaliar como mudança
+	// isolada e documentada, se o projeto quiser formatação automática —
+	// nunca como efeito colateral de configurar o linter.
+	"formatter": {
+		"enabled": false
+	},
+	"linter": {
+		"enabled": true,
+		// De propósito, NÃO usamos o preset "recommended" do Biome (~200
+		// regras). ESLint (já configurado, com typescript-eslint e o plugin
+		// do Next.js) cobre a base ampla — regras conscientes de tipo, hooks
+		// do React, convenções do framework. Aqui o Biome cobre só um punhado
+		// pequeno de anti-padrões, escolhidos um a um. Regra nova entra em
+		// "warn" primeiro, sobe pra "error" só quando a contagem de
+		// violações existentes chegar a zero.
+		"rules": {
+			"preset": "none",
+			"correctness": {
+				// Variável/import declarado e nunca usado quase sempre é
+				// esquecimento ou código morto.
+				"noUnusedVariables": "error",
+				"noUnusedImports": "error"
+			},
+			"suspicious": {
+				// "any" explícito não é proibido, mas precisa ficar visível —
+				// é onde o TypeScript para de checar por você.
+				"noExplicitAny": "warn",
+				// == em vez de === já causou bug de coerção de tipo em
+				// outros projetos deste padrão; travar aqui é barato.
+				"noDoubleEquals": "error"
+			},
+			"style": {
+				"useConst": "warn"
+			}
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double"
+		}
+	},
+	"css": {
+		"parser": {
+			// app/globals.css usa @apply/@layer/@theme do Tailwind v4 — sem
+			// isso o parser CSS do Biome os trata como erro de sintaxe.
+			"tailwindDirectives": true
+		}
+	},
+	// Desligado por ora — só relevante se algum dia rodarmos `biome check
+	// --write`; o script `check:biome` deste projeto é só leitura.
+	"assist": {
+		"enabled": false
+	}
+}
