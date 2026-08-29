@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
+import { REDACAO_ENABLED, PLANOS_ENABLED } from "@/lib/feature-flags";
 
 export function Header() {
   const router = useRouter();
@@ -46,17 +47,20 @@ export function Header() {
         <div className="flex items-center gap-3 text-sm">
           <Button render={<Link href="/pratica">Praticar</Link>} variant="link" />
           <Button render={<Link href="/simulados">Simulados</Link>} variant="link" />
-          <Button render={<Link href="/redacao">Redação</Link>} variant="link" />
-          {displayedPlan === "premium" ? (
-            <Link
-              href="/planos"
-              className="rounded bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground"
-            >
-              Premium
-            </Link>
-          ) : (
-            <Button render={<Link href="/planos">Planos</Link>} variant="link" />
+          {REDACAO_ENABLED && (
+            <Button render={<Link href="/redacao">Redação</Link>} variant="link" />
           )}
+          {PLANOS_ENABLED &&
+            (displayedPlan === "premium" ? (
+              <Link
+                href="/planos"
+                className="rounded bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground"
+              >
+                Premium
+              </Link>
+            ) : (
+              <Button render={<Link href="/planos">Planos</Link>} variant="link" />
+            ))}
           <span>{data.user.name}</span>
           <Button type="button" variant="outline" size="sm" onClick={handleSignOut}>
             Sair
@@ -64,7 +68,9 @@ export function Header() {
         </div>
       ) : (
         <div className="flex items-center gap-3 text-sm">
-          <Button render={<Link href="/planos">Planos</Link>} variant="link" />
+          {PLANOS_ENABLED && (
+            <Button render={<Link href="/planos">Planos</Link>} variant="link" />
+          )}
           <Button render={<Link href="/entrar">Entrar</Link>} variant="link" />
         </div>
       )}
