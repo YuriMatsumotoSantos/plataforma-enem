@@ -46,8 +46,15 @@ next-env.d.ts
 # ingest downloads (large PDFs, not committed)
 scripts/ingest/downloads/
 
-# local Claude Code tooling (skills, dev-server launch config) - not project code
-.claude/
+# local Claude Code tooling (3rd-party skills, dev-server launch config,
+# stray worktree artifacts, runtime hook stats) - not project code.
+# settings.json/hooks/agents/rules ARE project code (shared config, versioned
+# on purpose so any session/collaborator gets the same setup) - un-ignored below.
+.claude/*
+!.claude/settings.json
+!.claude/hooks/
+!.claude/agents/
+!.claude/rules/
 
 # graphify knowledge-graph output - generated artifact, not project code
 graphify-out/
