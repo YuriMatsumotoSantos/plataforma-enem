@@ -86,14 +86,10 @@ const eslintConfig = defineConfig([
       ],
       "max-nested-callbacks": ["warn", 3],
       "quality/max-lines": "error",
-      // Measured (Step 6): 3 real violations in application code
-      // (app/api/stripe/webhook/route.ts x2, Header.tsx x1) — no shared log
-      // adapter exists in this project yet. "warn" with that baseline until
-      // a logger exists and the count reaches zero.
-      "quality/no-direct-console": [
-        "warn",
-        { logger: "nenhum adaptador de log existe ainda neste projeto" },
-      ],
+      // Burn-down (02-eslint-warning-burndown.md): the 3 measured
+      // violations (webhook route x2, Header.tsx x1) now go through
+      // lib/logger.ts — count is 0, promoted to "error".
+      "quality/no-direct-console": ["error", { logger: "lib/logger.ts" }],
       "quality/no-direct-data-access": [
         "error",
         {
@@ -147,6 +143,15 @@ const eslintConfig = defineConfig([
     files: ["app/api/**/*.ts"],
     rules: {
       "quality/no-direct-data-access": "off",
+    },
+  },
+  {
+    // The log adapter itself. Must come after the block that turns the rule
+    // on — flat config applies the later block's rules last, so an "off"
+    // placed earlier would be silently overridden.
+    files: ["lib/logger.ts"],
+    rules: {
+      "quality/no-direct-console": "off",
     },
   },
   {

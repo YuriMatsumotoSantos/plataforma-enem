@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
+type StripeActionResponse = { error?: string; url?: string };
+
 function PlanosContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -16,7 +18,9 @@ function PlanosContent() {
 
   useEffect(() => {
     fetch("/api/me")
-      .then((response) => (response.ok ? response.json() : null))
+      .then((response) =>
+        response.ok ? (response.json() as Promise<{ plan: "free" | "premium" }>) : null
+      )
       .then((body) => setPlan(body?.plan ?? null))
       .catch(() => setPlan(null))
       .finally(() => setLoadingPlan(false));
@@ -32,13 +36,15 @@ function PlanosContent() {
         return;
       }
       if (!response.ok) {
-        const body = await response.json().catch(() => null);
+        const body = (await response
+          .json()
+          .catch(() => null)) as StripeActionResponse | null;
         setError(body?.error ?? "Não foi possível iniciar o checkout.");
         setRedirecting(false);
         return;
       }
-      const body = await response.json();
-      window.location.href = body.url;
+      const body = (await response.json()) as StripeActionResponse;
+      if (body.url) window.location.href = body.url;
     } catch {
       setError("Não foi possível iniciar o checkout.");
       setRedirecting(false);
@@ -51,13 +57,15 @@ function PlanosContent() {
     try {
       const response = await fetch("/api/stripe/portal", { method: "POST" });
       if (!response.ok) {
-        const body = await response.json().catch(() => null);
+        const body = (await response
+          .json()
+          .catch(() => null)) as StripeActionResponse | null;
         setError(body?.error ?? "Não foi possível abrir o portal de assinatura.");
         setRedirecting(false);
         return;
       }
-      const body = await response.json();
-      window.location.href = body.url;
+      const body = (await response.json()) as StripeActionResponse;
+      if (body.url) window.location.href = body.url;
     } catch {
       setError("Não foi possível abrir o portal de assinatura.");
       setRedirecting(false);
@@ -99,11 +107,23 @@ function PlanosContent() {
             </div>
             {!loadingPlan &&
               (plan === "premium" ? (
-                <Button type="button" disabled={redirecting} onClick={handleGerenciar}>
+                <Button
+                  type="button"
+                  disabled={redirecting}
+                  onClick={() => {
+                    void handleGerenciar();
+                  }}
+                >
                   Gerenciar assinatura
                 </Button>
               ) : (
-                <Button type="button" disabled={redirecting} onClick={handleAssinar}>
+                <Button
+                  type="button"
+                  disabled={redirecting}
+                  onClick={() => {
+                    void handleAssinar();
+                  }}
+                >
                   Assinar
                 </Button>
               ))}

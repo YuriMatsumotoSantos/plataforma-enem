@@ -55,7 +55,7 @@ export default function SimuladoResultadoPage() {
         }
         return response.json();
       })
-      .then((data) => {
+      .then((data: { scoreByArea: AreaScore[]; questions: ReviewQuestion[] } | null) => {
         if (cancelled || data === null) return;
         setScoreByArea(data.scoreByArea);
         setQuestions(data.questions);

@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import type Stripe from "stripe";
 import { getStripeClient } from "@/lib/stripe";
 import { db } from "@/lib/db";
+import { logger } from "@/lib/logger";
 import { subscriptions } from "@/db/schema";
 
 const VALID_STATUSES = ["trialing", "active", "past_due", "canceled", "incomplete"] as const;
@@ -15,7 +16,7 @@ function toSubscriptionStatus(status: string): SubscriptionStatus {
 
 async function upsertSubscription(sub: Stripe.Subscription, eventId: string) {
   if (sub.items.data.length === 0) {
-    console.error("Webhook: subscription sem items.data, evento ignorado", {
+    logger.error("Webhook: subscription sem items.data, evento ignorado", {
       eventId,
       subscriptionId: sub.id,
     });
@@ -60,7 +61,7 @@ async function upsertSubscription(sub: Stripe.Subscription, eventId: string) {
     .returning({ id: subscriptions.id });
 
   if (updated.length === 0) {
-    console.error("Webhook: sem metadata.userId e sem linha existente para atualizar", {
+    logger.error("Webhook: sem metadata.userId e sem linha existente para atualizar", {
       eventId,
       subscriptionId: sub.id,
     });

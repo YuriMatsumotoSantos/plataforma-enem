@@ -53,8 +53,12 @@ async function fetchStatusCounts(): Promise<Record<Status, number | null>> {
   const results = await Promise.all(
     STATUSES.map((s) =>
       fetch(`/api/admin/questions?status=${s}&page=1`)
-        .then((response) => (response.ok ? response.json() : { total: null }))
-        .catch(() => ({ total: null }))
+        .then((response) =>
+          response.ok
+            ? (response.json() as Promise<{ total: number | null }>)
+            : { total: null as number | null }
+        )
+        .catch(() => ({ total: null as number | null }))
     )
   );
   const next = {} as Record<Status, number | null>;
@@ -89,7 +93,7 @@ function RevisaoContent() {
         }
         return response.json();
       })
-      .then((data) => {
+      .then((data: { questions: Question[]; total: number }) => {
         if (cancelled) return;
         setQuestions(data.questions);
         setTotal(data.total);
@@ -107,9 +111,11 @@ function RevisaoContent() {
 
   useEffect(() => {
     let cancelled = false;
-    fetchStatusCounts().then((next) => {
-      if (!cancelled) setCounts(next);
-    });
+    fetchStatusCounts()
+      .then((next) => {
+        if (!cancelled) setCounts(next);
+      })
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
@@ -130,7 +136,7 @@ function RevisaoContent() {
 
       const refreshResponse = await fetch(`/api/admin/questions?status=${status}&page=${page}`);
       if (refreshResponse.ok) {
-        const data = await refreshResponse.json();
+        const data = (await refreshResponse.json()) as { questions: Question[]; total: number };
         setQuestions(data.questions);
         setTotal(data.total);
       }
@@ -227,10 +233,18 @@ function RevisaoContent() {
                   ))}
                 </ul>
                 <div className="flex gap-2">
-                  <Button onClick={() => handleAction(question.id, "aprovada")}>Aprovar</Button>
+                  <Button
+                    onClick={() => {
+                      void handleAction(question.id, "aprovada");
+                    }}
+                  >
+                    Aprovar
+                  </Button>
                   <Button
                     variant="destructive"
-                    onClick={() => handleAction(question.id, "rejeitada")}
+                    onClick={() => {
+                      void handleAction(question.id, "rejeitada");
+                    }}
                   >
                     Rejeitar
                   </Button>

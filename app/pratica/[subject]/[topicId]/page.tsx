@@ -58,7 +58,7 @@ export default function PraticaSessaoPage() {
         }
         return response.json();
       })
-      .then((data) => {
+      .then((data: { questions: PracticeQuestion[] } | null) => {
         if (cancelled || data === null) return;
         setQuestions(shuffle(data.questions));
       })
@@ -92,7 +92,7 @@ export default function PraticaSessaoPage() {
       }
 
       if (response.status === 402) {
-        const data = await response.json().catch(() => null);
+        const data = (await response.json().catch(() => null)) as { error?: string } | null;
         setAttemptError(data?.error ?? "Limite do plano grátis atingido.");
         setLimitReached(true);
         return;
@@ -103,7 +103,7 @@ export default function PraticaSessaoPage() {
         return;
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as { isCorrect: boolean; correctAnswer: string };
       setFeedback({ isCorrect: data.isCorrect, correctAnswer: data.correctAnswer });
       if (data.isCorrect) setScore((prev) => prev + 1);
     } catch {
@@ -210,7 +210,9 @@ export default function PraticaSessaoPage() {
                   variant={variant}
                   className="justify-start"
                   disabled={answeredLetter !== null}
-                  onClick={() => handleAnswer(alt.letter)}
+                  onClick={() => {
+                    void handleAnswer(alt.letter);
+                  }}
                 >
                   {alt.letter}) {alt.text}
                   {feedback && isCorrectAnswer && " ✓"}

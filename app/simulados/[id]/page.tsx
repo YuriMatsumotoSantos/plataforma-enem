@@ -224,7 +224,9 @@ export default function SimuladoPage() {
                 type="button"
                 variant={currentAnswer.selectedAnswer === alt.letter ? "default" : "outline"}
                 className="justify-start"
-                onClick={() => saveAnswer(question.id, { selectedAnswer: alt.letter })}
+                onClick={() => {
+                  void saveAnswer(question.id, { selectedAnswer: alt.letter });
+                }}
               >
                 {alt.letter}) {alt.text}
               </Button>
@@ -236,9 +238,11 @@ export default function SimuladoPage() {
               type="button"
               variant="outline"
               size="sm"
-              onClick={() =>
-                saveAnswer(question.id, { markedForReview: !currentAnswer.markedForReview })
-              }
+              onClick={() => {
+                void saveAnswer(question.id, {
+                  markedForReview: !currentAnswer.markedForReview,
+                });
+              }}
             >
               {currentAnswer.markedForReview ? "Remover marcação" : "Marcar pra revisar"}
             </Button>
@@ -257,7 +261,13 @@ export default function SimuladoPage() {
                   Próxima
                 </Button>
               ) : null}
-              <Button type="button" disabled={finalizing} onClick={handleFinalizar}>
+              <Button
+                type="button"
+                disabled={finalizing}
+                onClick={() => {
+                  void handleFinalizar();
+                }}
+              >
                 Finalizar simulado
               </Button>
             </div>

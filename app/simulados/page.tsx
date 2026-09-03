@@ -48,7 +48,7 @@ export default function SimuladosPage() {
         }
         return response.json();
       })
-      .then((data) => {
+      .then((data: { fiel: FielOption[]; mesclado: MescladoOption[] } | null) => {
         if (cancelled || data === null) return;
         setFiel(data.fiel);
         setMesclado(data.mesclado);
@@ -80,17 +80,17 @@ export default function SimuladosPage() {
         return;
       }
       if (response.status === 402) {
-        const data = await response.json().catch(() => null);
+        const data = (await response.json().catch(() => null)) as { error?: string } | null;
         setError(data?.error ?? "Limite do plano grátis atingido.");
         setLimitReached(true);
         return;
       }
       if (!response.ok) {
-        const data = await response.json().catch(() => null);
+        const data = (await response.json().catch(() => null)) as { error?: string } | null;
         setError(data?.error ?? "Não foi possível iniciar o simulado.");
         return;
       }
-      const data = await response.json();
+      const data = (await response.json()) as { id: string };
       router.push(`/simulados/${data.id}`);
     } catch {
       setError("Não foi possível iniciar o simulado.");
@@ -130,7 +130,9 @@ export default function SimuladosPage() {
                   <Button
                     type="button"
                     disabled={creating}
-                    onClick={() => handleStart({ mode: "mesclado", examDay: option.examDay })}
+                    onClick={() => {
+                      void handleStart({ mode: "mesclado", examDay: option.examDay });
+                    }}
                   >
                     Iniciar
                   </Button>
@@ -172,9 +174,13 @@ export default function SimuladosPage() {
                   <Button
                     type="button"
                     disabled={creating}
-                    onClick={() =>
-                      handleStart({ mode: "fiel", examDay: option.examDay, examYear: option.year })
-                    }
+                    onClick={() => {
+                      void handleStart({
+                        mode: "fiel",
+                        examDay: option.examDay,
+                        examYear: option.year,
+                      });
+                    }}
                   >
                     Iniciar
                   </Button>

@@ -49,7 +49,7 @@ export default function ResultadoRedacaoPage() {
         }
         return response.json();
       })
-      .then((data) => {
+      .then((data: RedacaoDetalhe | null) => {
         if (cancelled || data === null) return;
         setRedacao(data);
       })

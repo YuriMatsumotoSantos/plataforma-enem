@@ -24,6 +24,17 @@ import type { Question } from "./page";
 
 type TopicOption = { id: string; area: string; subject: string; name: string };
 
+// Shape of PATCH /api/admin/questions/:id's response body. Success returns
+// the updated question with a flat topicId (not the nested topic object —
+// the caller resolves that from the already-fetched `topics` list); failure
+// returns just an error message. Both branches are optional so accessing
+// `.error` on success or a field on failure doesn't need a runtime guard —
+// the fields that don't apply are simply undefined, matching what the API
+// actually sends.
+type PatchQuestionResponse = Partial<
+  Pick<Question, "statement" | "alternatives" | "correctAnswer" | "status">
+> & { error?: string; topicId?: string };
+
 const LETTERS = ["A", "B", "C", "D", "E"] as const;
 
 export function EditQuestionDialog({
@@ -51,7 +62,7 @@ export function EditQuestionDialog({
 
   useEffect(() => {
     fetch("/api/admin/topics")
-      .then((response) => response.json())
+      .then((response) => response.json() as Promise<{ topics: TopicOption[] }>)
       .then((data) => setTopics(data.topics))
       .catch(() => setError("Não foi possível carregar a lista de assuntos."));
   }, []);
@@ -76,7 +87,7 @@ export function EditQuestionDialog({
         }),
       });
 
-      const body = await response.json();
+      const body = (await response.json()) as PatchQuestionResponse;
 
       if (!response.ok) {
         setError(body.error ?? "Não foi possível salvar as alterações.");
@@ -86,10 +97,10 @@ export function EditQuestionDialog({
       const updatedTopic = topics?.find((t) => t.id === body.topicId);
       onSaved({
         ...question,
-        statement: body.statement,
-        alternatives: body.alternatives,
-        correctAnswer: body.correctAnswer,
-        status: body.status,
+        statement: body.statement ?? question.statement,
+        alternatives: body.alternatives ?? question.alternatives,
+        correctAnswer: body.correctAnswer ?? question.correctAnswer,
+        status: body.status ?? question.status,
         topic: updatedTopic ?? question.topic,
       });
     } catch {
@@ -112,7 +123,12 @@ export function EditQuestionDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form
+          onSubmit={(event) => {
+            void handleSubmit(event);
+          }}
+          className="flex flex-col gap-4"
+        >
           <div className="flex flex-col gap-2">
             <Label htmlFor="statement">Enunciado</Label>
             <Textarea

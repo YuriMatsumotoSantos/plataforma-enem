@@ -25,7 +25,7 @@ export default function PraticaPage() {
         }
         return response.json();
       })
-      .then((data) => {
+      .then((data: { subjects: Subject[] } | null) => {
         if (cancelled || data === null) return;
         setSubjects(data.subjects);
       })

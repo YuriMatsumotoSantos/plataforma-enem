@@ -84,7 +84,9 @@ export default function EntrarPage() {
         </CardHeader>
         <CardContent>
           <form
-            onSubmit={mode === "login" ? handleLogin : handleSignUp}
+            onSubmit={(event) => {
+              void (mode === "login" ? handleLogin(event) : handleSignUp(event));
+            }}
             className="flex flex-col gap-4"
           >
             {mode === "cadastro" && (

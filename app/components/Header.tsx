@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { REDACAO_ENABLED, PLANOS_ENABLED } from "@/lib/feature-flags";
+import { logger } from "@/lib/logger";
 
 export function Header() {
   const router = useRouter();
@@ -17,7 +18,9 @@ export function Header() {
     if (!data?.user) return;
     let cancelled = false;
     fetch("/api/me")
-      .then((response) => (response.ok ? response.json() : null))
+      .then((response) =>
+        response.ok ? (response.json() as Promise<{ plan: "free" | "premium" }>) : null
+      )
       .then((body) => {
         if (!cancelled && body) setPlan(body.plan);
       })
@@ -33,7 +36,7 @@ export function Header() {
       router.push("/");
       router.refresh();
     } catch (error) {
-      console.error("Erro ao sair:", error);
+      logger.error("Erro ao sair:", error);
     }
   }
 
@@ -62,7 +65,14 @@ export function Header() {
               <Button render={<Link href="/planos">Planos</Link>} variant="link" />
             ))}
           <span>{data.user.name}</span>
-          <Button type="button" variant="outline" size="sm" onClick={handleSignOut}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              void handleSignOut();
+            }}
+          >
             Sair
           </Button>
         </div>

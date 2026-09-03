@@ -28,7 +28,7 @@ export default function AssuntoListPage() {
         }
         return response.json();
       })
-      .then((data) => {
+      .then((data: { topics: Topic[] } | null) => {
         if (cancelled || data === null) return;
         setTopics(data.topics);
       })

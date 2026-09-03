@@ -26,7 +26,7 @@ export default function RedacaoPage() {
         }
         return response.json();
       })
-      .then((data) => {
+      .then((data: { temas: Tema[] } | null) => {
         if (cancelled || data === null) return;
         setTemas(data.temas);
       })

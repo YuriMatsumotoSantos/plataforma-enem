@@ -34,7 +34,7 @@ export default function SimuladosHistoricoPage() {
         }
         return response.json();
       })
-      .then((data) => {
+      .then((data: { simulados: SimuladoHistoryItem[] } | null) => {
         if (cancelled || data === null) return;
         setHistory(data.simulados);
       })

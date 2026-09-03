@@ -35,9 +35,9 @@ export default function EscreverRedacaoPage() {
         }
         return response.json();
       })
-      .then((data) => {
+      .then((data: { temas: { id: string; title: string }[] } | null) => {
         if (cancelled || data === null) return;
-        const tema = data.temas.find((t: { id: string }) => t.id === params.temaId);
+        const tema = data.temas.find((t) => t.id === params.temaId);
         setTemaTitle(tema ? tema.title : null);
       })
       .catch(() => {
@@ -62,15 +62,19 @@ export default function EscreverRedacaoPage() {
         body: JSON.stringify({ temaId: params.temaId, text }),
       });
       if (response.status === 402) {
-        const body = await response.json().catch(() => ({ error: "Limite do plano grátis atingido." }));
+        const body = (await response
+          .json()
+          .catch(() => ({ error: "Limite do plano grátis atingido." }))) as { error?: string };
         setLimitReached(true);
         throw new ApiError(body.error ?? "Limite do plano grátis atingido.");
       }
       if (!response.ok) {
-        const body = await response.json().catch(() => ({ error: "Erro ao corrigir a redação." }));
+        const body = (await response
+          .json()
+          .catch(() => ({ error: "Erro ao corrigir a redação." }))) as { error?: string };
         throw new ApiError(body.error ?? "Erro ao corrigir a redação.");
       }
-      const redacao = await response.json();
+      const redacao = (await response.json()) as { id: string };
       router.push(`/redacao/resultado/${redacao.id}`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Erro ao corrigir a redação.");
@@ -106,7 +110,13 @@ export default function EscreverRedacaoPage() {
         </Link>
       )}
 
-      <Button type="button" onClick={handleSubmit} disabled={!canSubmit}>
+      <Button
+        type="button"
+        onClick={() => {
+          void handleSubmit();
+        }}
+        disabled={!canSubmit}
+      >
         {submitting ? "Corrigindo... isso pode levar alguns segundos" : "Enviar para correção"}
       </Button>
     </main>

@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
 import { Card, CardHeader } from "@/components/ui/card";
 import {
   Pagination,
@@ -44,7 +43,7 @@ function HistoricoContent() {
         }
         return response.json();
       })
-      .then((data) => {
+      .then((data: { redacoes: RedacaoResumo[]; total: number; pageSize: number } | null) => {
         if (cancelled || data === null) return;
         setRedacoes(data.redacoes);
         setTotal(data.total);
