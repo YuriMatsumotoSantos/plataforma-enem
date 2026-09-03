@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "lint:types": "eslint --config eslint.typed.config.mjs .",
     "check:biome": "biome check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -37,6 +39,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.11",
+    "@eslint/js": "^9.39.5",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -45,9 +48,12 @@
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-import-x": "^4.17.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.12",
     "typescript": "^5",
+    "typescript-eslint": "^8.69.0",
     "vitest": "^4.1.10"
   }
 }
