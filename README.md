@@ -1,6 +1,25 @@
 # Plataforma ENEM
 
-Base do app Next.js (autenticação, banco Postgres, headers de segurança e CI) sobre a qual os demais subsistemas serão construídos.
+Plataforma de estudos para o ENEM: banco de questões, prática por assunto, simulados e correção de redação com IA. Projeto pessoal, nascido como extensão da minha Iniciação Científica sobre correção automática de redações.
+
+**Estado: em desenvolvimento, pausado desde setembro de 2026.** Parei para me dedicar à Iniciação Científica e ao TCC. O que está descrito abaixo funciona em ambiente local. A versão publicada em produção está desatualizada.
+
+## O que já funciona
+
+- Autenticação, banco PostgreSQL com migrações, headers de segurança, testes de integração e CI.
+- Pipeline de ingestão: baixa as provas, extrai e classifica as questões com a API do Gemini e grava tudo como pendente.
+- Fila de revisão humana em `/admin/revisao`, para aprovar, corrigir ou rejeitar cada questão antes de ela chegar ao aluno.
+- Prática por assunto com feedback imediato e registro das tentativas.
+- Planos Grátis e Premium com limites de uso, integrados à Stripe em modo de teste.
+
+## O que falta
+
+- Dashboard e recomendação adaptativa a partir das tentativas gravadas.
+- Atualizar a versão publicada em produção.
+
+## Stack
+
+Next.js 16, React 19, TypeScript, PostgreSQL com Drizzle, Better Auth, Supabase Storage, API do Gemini, Stripe, Vitest, ESLint e Biome.
 
 ## Pré-requisitos
 
